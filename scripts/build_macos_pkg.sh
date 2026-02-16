@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Resolve paths relative to this script's location (works from any CWD)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 APP_NAME="Figma Discord RPC"
 BINARY_NAME="figma-rpc"
 IDENTIFIER="com.figma.discord-rpc"
@@ -10,17 +14,16 @@ echo "Building macOS package for $APP_NAME..."
 
 # 1. Build binary
 echo "[1/4] Compiling binary..."
-cd ../src
-GOOS=darwin GOARCH=amd64 go build -o ../dist/root/usr/local/bin/$BINARY_NAME .
-cd ../scripts
+mkdir -p "$ROOT_DIR/dist/root/usr/local/bin"
+cd "$ROOT_DIR/src"
+GOOS=darwin GOARCH=amd64 go build -o "$ROOT_DIR/dist/root/usr/local/bin/$BINARY_NAME" .
 
 # 2. Prepare payload
 echo "[2/4] Preparing payload..."
-mkdir -p ../dist/root/usr/local/bin
-mkdir -p ../dist/root/Library/LaunchAgents
+mkdir -p "$ROOT_DIR/dist/root/Library/LaunchAgents"
 
 # Create LaunchAgent plist
-cat > ../dist/root/Library/LaunchAgents/$IDENTIFIER.plist <<EOF
+cat > "$ROOT_DIR/dist/root/Library/LaunchAgents/$IDENTIFIER.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -45,17 +48,17 @@ EOF
 
 # 3. Build component package
 echo "[3/4] Building component package..."
-pkgbuild --root ../dist/root \
-         --identifier $IDENTIFIER \
-         --version $VERSION \
+pkgbuild --root "$ROOT_DIR/dist/root" \
+         --identifier "$IDENTIFIER" \
+         --version "$VERSION" \
          --install-location / \
-         ../dist/component.pkg
+         "$ROOT_DIR/dist/component.pkg"
 
 # 4. Build product archive (distribution pkg)
 echo "[4/4] Building distribution package..."
-productbuild --distribution distribution.xml \
-             --package-path ../dist \
-             --resources resources \
-             ../dist/FigmaRPC_Installer.pkg
+productbuild --distribution "$SCRIPT_DIR/distribution.xml" \
+             --package-path "$ROOT_DIR/dist" \
+             --resources "$SCRIPT_DIR/resources" \
+             "$ROOT_DIR/dist/FigmaRPC_Installer.pkg"
 
 echo "Done! Package at dist/FigmaRPC_Installer.pkg"
