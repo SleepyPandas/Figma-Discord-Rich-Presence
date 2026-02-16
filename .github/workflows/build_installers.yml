@@ -11,10 +11,10 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: '1.21'
         
@@ -24,9 +24,9 @@ jobs:
         go build -ldflags "-H windowsgui" -o ../figma-rpc.exe .
         
     - name: Compile Installer
-      uses: Minionguyjosh/Inno-Setup-Action@v1.2.2
-      with:
-        path: scripts/installer.iss
+      run: |
+        choco install innosetup
+        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" scripts/installer.iss
         
     - name: Upload Installer
       uses: actions/upload-artifact@v4
@@ -37,10 +37,10 @@ jobs:
   build-macos:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: '1.21'
         
