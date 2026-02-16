@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/hugolgst/rich-go/client"
@@ -32,6 +34,16 @@ func main() {
 		fmt.Println("Waiting for Discord... retrying in 5s")
 		time.Sleep(5 * time.Second)
 	}
+
+	// Handle graceful shutdown (Ctrl+C)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		fmt.Println("\nShutting down... logging out of Discord.")
+		client.Logout()
+		os.Exit(0)
+	}()
 
 	fmt.Println("Figma Discord Rich Presence is running...")
 
