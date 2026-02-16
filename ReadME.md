@@ -21,7 +21,7 @@ If you have any suggestions make an issue! :)
 ## Installation 
 
 ### Website 
-1. Visit the github pages website for distribution (Coming Soon!)
+1. Visit the website for installation files [Figma Discord Rich Presence](https://sleepypandas.github.io/Figma-Discord-Rich-Presence/)
 
 ### Windows
 1. Go to the [Releases](https://github.com/SleepyPandas/Figma-Discord-Rich-Presence/releases) page.
