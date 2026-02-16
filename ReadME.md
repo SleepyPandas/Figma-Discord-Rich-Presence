@@ -39,7 +39,7 @@ If you have any suggestions make an issue! :)
 > [!NOTE]
 > To uninstall on Windows go into Add or Remove Programs from the start Menu and Search for Figma Discord Rich Prescence
 > 
-> MacOs will warn you about unverified publisher this is normal as it would cost me 99 USD$ to verify it...
+> MacOs / Windows will warn you about unverified publisher this is normal as it would cost me to verify it...
 
 <img width="500" height="255" alt="image" src="https://github.com/user-attachments/assets/34a93241-1594-4e9d-90ed-b58fe48135a5" />
 
