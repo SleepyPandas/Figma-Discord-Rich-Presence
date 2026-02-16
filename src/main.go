@@ -10,6 +10,8 @@ import (
 )
 
 func main() {
+	fmt.Println("Figma Discord Rich Presence v1.0.0")
+
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Warning: Error loading .env file")
@@ -17,12 +19,18 @@ func main() {
 	// Not a Secret But you can Either set your own VAR "Discord_Client_ID here or in an .env file"
 	clientID := os.Getenv("DISCORD_CLIENT_ID")
 	if clientID == "" {
-		panic("DISCORD_CLIENT_ID is not set")
+		fmt.Println("Error: DISCORD_CLIENT_ID is not set. Set it in your .env file or as an environment variable.")
+		os.Exit(1)
 	}
 
-	err = client.Login(clientID)
-	if err != nil {
-		panic(err)
+	// Retry connecting to Discord until it succeeds
+	for {
+		err = client.Login(clientID)
+		if err == nil {
+			break
+		}
+		fmt.Println("Waiting for Discord... retrying in 5s")
+		time.Sleep(5 * time.Second)
 	}
 
 	fmt.Println("Figma Discord Rich Presence is running...")
@@ -79,7 +87,7 @@ func main() {
 		lastFilename = filename
 
 		// Poll every 1 seconds (the limit  for discord is generally 1 per 15 seconds or 10000)
-		// 10000 requests per 6 minutes 
+		// 10000 requests per 6 minutes
 		// however we only ping discord API when there is an actual change so 1 is fine
 		time.Sleep(1 * time.Second)
 	}
