@@ -79,6 +79,6 @@ func main() {
 
 		// Update every 15 seconds (Discord's rate limit is 15s for visual updates usually) or 10000 Rq
 		// 10000 Requests per 10 minutes ~ 1 requests per 15 seconds
-		time.Sleep(15 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }
