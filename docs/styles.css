@@ -25,7 +25,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Plus Jakarta Sans", "Segoe UI", Tahoma, sans-serif;
+  font-family: "Outfit", "Segoe UI", Tahoma, sans-serif;
   color: var(--text-primary);
   background: linear-gradient(165deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
   line-height: 1.5;
@@ -115,6 +115,12 @@ body {
   margin-bottom: clamp(1.25rem, 3vw, 2rem);
 }
 
+.header-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
 #main-content {
   display: grid;
   gap: clamp(1rem, 2vw, 1.45rem);
@@ -131,6 +137,32 @@ body {
 
 .repo-label:hover {
   color: var(--text-primary);
+}
+
+.github-profile-link {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  background: rgba(255, 255, 255, 0.74);
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.github-profile-link:hover {
+  color: var(--text-primary);
+  border-color: rgba(11, 102, 255, 0.4);
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+}
+
+.github-icon {
+  width: 1.05rem;
+  height: 1.05rem;
 }
 
 .card {
@@ -156,70 +188,24 @@ body {
 }
 
 .hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(250px, 34%);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: clamp(1rem, 4vw, 3rem);
+  justify-content: center;
+  gap: clamp(1.1rem, 2.2vw, 1.7rem);
+  position: relative;
+  text-align: center;
+  padding-bottom: clamp(2.8rem, 5vw, 3.6rem);
 }
 
 .hero-content {
-  max-width: 700px;
+  max-width: 760px;
 }
 
-.hero-visual {
-  position: relative;
-  width: min(100%, 340px);
-  aspect-ratio: 1;
-  justify-self: end;
-}
-
-.orbit,
-.orb {
-  position: absolute;
-  border-radius: 999px;
-}
-
-.orbit {
-  border: 1px solid rgba(11, 102, 255, 0.24);
-}
-
-.orbit-one {
-  inset: 4%;
-  animation: spinSlow 30s linear infinite;
-}
-
-.orbit-two {
-  inset: 18%;
-  animation: spinSlow 22s linear infinite reverse;
-}
-
-.orb {
-  background: radial-gradient(circle at 30% 30%, #ffffff, #8fb6ff 72%);
-  box-shadow: 0 10px 28px rgba(11, 102, 255, 0.22);
-  animation: bob 7s ease-in-out infinite;
-}
-
-.orb-one {
-  width: 22px;
-  height: 22px;
-  top: 14%;
-  right: 22%;
-}
-
-.orb-two {
-  width: 14px;
-  height: 14px;
-  bottom: 24%;
-  left: 18%;
-  animation-delay: 1.1s;
-}
-
-.orb-three {
-  width: 9px;
-  height: 9px;
-  top: 58%;
-  right: 12%;
-  animation-delay: 0.45s;
+.hero-actions {
+  margin-top: clamp(2rem, 4.2vw, 2.8rem);
+  width: min(100%, 760px);
 }
 
 .eyebrow {
@@ -235,13 +221,14 @@ h1,
 h2,
 h3 {
   margin: 0;
-  font-family: "Space Grotesk", "Segoe UI", Tahoma, sans-serif;
+  font-family: "Outfit", "Segoe UI", Tahoma, sans-serif;
   line-height: 1.2;
 }
 
 h1 {
   font-size: clamp(2.2rem, 6vw, 4.1rem);
   margin-bottom: 0.95rem;
+  margin-inline: auto;
   max-width: 18ch;
 }
 
@@ -262,11 +249,12 @@ p {
 
 .hero-copy {
   max-width: 55ch;
+  margin-inline: auto;
   font-size: 1.08rem;
 }
 
 .cta-row {
-  margin-top: 1.8rem;
+  margin-top: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.8rem;
@@ -295,6 +283,31 @@ p {
   transform: translateY(-1px);
 }
 
+.button-dark {
+  color: #f8fafc;
+  background: #0b0f19;
+  border-color: #0b0f19;
+}
+
+.button-dark:hover {
+  background: #171d2b;
+  border-color: #171d2b;
+  transform: translateY(-1px);
+}
+
+.button-light {
+  color: #0b3b8c;
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.button-light:hover {
+  color: #0a3278;
+  background: #bfdbfe;
+  border-color: #60a5fa;
+  transform: translateY(-1px);
+}
+
 .button-ghost {
   color: var(--accent);
   border-color: rgba(11, 102, 255, 0.35);
@@ -317,6 +330,42 @@ p {
 
 .text-link:hover {
   text-decoration: underline;
+}
+
+.hero-releases-link {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  margin-top: 0;
+}
+
+.preview-card {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.36fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1rem, 2.8vw, 2rem);
+}
+
+.preview-copy p {
+  margin-top: 0.55rem;
+}
+
+.preview-media {
+  display: block;
+  width: min(100%, 663px);
+  justify-self: end;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  background: #05070e;
+  text-decoration: none;
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.2);
+}
+
+.preview-media img {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .steps-list {
@@ -444,33 +493,14 @@ button:focus-visible {
   }
 }
 
-@keyframes spinSlow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-9px);
-  }
-}
-
 @media (max-width: 900px) {
-  .hero-grid {
+  .preview-card {
     grid-template-columns: 1fr;
   }
 
-  .hero-visual {
+  .preview-media {
     justify-self: start;
-    width: min(56vw, 290px);
+    width: min(100%, 663px);
   }
 
   .dot-arc {
@@ -491,6 +521,27 @@ button:focus-visible {
 
   .hero {
     min-height: 0;
+  }
+
+  .hero-grid {
+    align-items: stretch;
+    text-align: left;
+    padding-bottom: 0;
+  }
+
+  .hero-content {
+    max-width: 100%;
+  }
+
+  h1,
+  .hero-copy {
+    margin-inline: 0;
+  }
+
+  .hero-releases-link {
+    position: static;
+    align-self: flex-start;
+    margin-top: 0.4rem;
   }
 
   .cta-row {
