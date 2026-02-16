@@ -34,11 +34,14 @@ jobs:
         choco install innosetup
         & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" scripts/installer.iss
         
+    - name: Rename Installer
+      run: mv dist/FigmaRPC_Setup.exe dist/FigmaRPC-Windows-Installer.exe
+
     - name: Upload Installer
       uses: actions/upload-artifact@v4
       with:
         name: Windows-Installer
-        path: dist/FigmaRPC_Setup.exe
+        path: dist/FigmaRPC-Windows-Installer.exe
 
   build-macos:
     runs-on: macos-latest
@@ -58,11 +61,14 @@ jobs:
         chmod +x scripts/build_macos_pkg.sh
         ./scripts/build_macos_pkg.sh
         
+    - name: Rename Installer
+      run: mv dist/FigmaRPC_Installer.pkg dist/FigmaRPC-MacOs-Installer.pkg
+
     - name: Upload Installer
       uses: actions/upload-artifact@v4
       with:
         name: macOS-Installer
-        path: dist/FigmaRPC_Installer.pkg
+        path: dist/FigmaRPC-MacOs-Installer.pkg
 
   draft-release:
     needs: [ build-windows, build-macos ]
@@ -89,5 +95,5 @@ jobs:
         draft: true
         generate_release_notes: true
         files: |
-          artifacts/FigmaRPC_Setup.exe
-          artifacts/FigmaRPC_Installer.pkg
+          artifacts/FigmaRPC-Windows-Installer.exe
+          artifacts/FigmaRPC-MacOs-Installer.pkg
