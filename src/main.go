@@ -30,6 +30,9 @@ func main() {
 	// Start time for the session
 	now := time.Now()
 
+	// Track the last detected state to avoid redundant Discord updates
+	lastFilename := ""
+
 	for {
 		// Get the current file from Figma
 		filename, err := GetFigmaTitle()
@@ -38,15 +41,11 @@ func main() {
 		}
 
 		if filename == "" {
-			// Figma not found or no file open
-
-			fmt.Println("Figma not detected or no file open.")
-
-			// We can choose to not update or set a default "Idling" state
-			// For now, let's just wait and retry.
-
-		} else {
-			fmt.Println("Detected:", filename)
+			if lastFilename != "" {
+				fmt.Println("Figma closed or no file open.")
+			}
+		} else if filename != lastFilename {
+			fmt.Println("State changed:", filename)
 
 			details := "Editing File"
 			state := filename
@@ -77,8 +76,11 @@ func main() {
 			}
 		}
 
-		// Update every 15 seconds (Discord's rate limit is 15s for visual updates usually) or 10000 Rq
-		// 10000 Requests per 10 minutes ~ 1 requests per 15 seconds
-		time.Sleep(5 * time.Second)
+		lastFilename = filename
+
+		// Poll every 1 seconds (the limit  for discord is generally 1 per 15 seconds or 10000)
+		// 10000 requests per 6 minutes 
+		// however we only ping discord API when there is an actual change so 1 is fine
+		time.Sleep(1 * time.Second)
 	}
 }
