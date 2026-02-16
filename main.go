@@ -50,10 +50,14 @@ func main() {
 
 			details := "Editing File"
 			state := filename
+			smallImage := "edit"
+			smallText := "Editing"
 
 			if filename == "Browsing Files" {
 				details = "In Home"
 				state = "Browsing Files"
+				smallImage = "folder"
+				smallText = "Browsing"
 			}
 
 			err = client.SetActivity(client.Activity{
@@ -61,6 +65,8 @@ func main() {
 				Details:    details,
 				LargeImage: "largeimageid",
 				LargeText:  "Figma",
+				SmallImage: smallImage,
+				SmallText:  smallText,
 				Timestamps: &client.Timestamps{
 					Start: &now,
 				},
@@ -71,7 +77,8 @@ func main() {
 			}
 		}
 
-		// Update every 15 seconds (Discord's rate limit is 15s for visual updates usually, but 5s is fine for logic)
+		// Update every 15 seconds (Discord's rate limit is 15s for visual updates usually) or 10000 Rq
+		// 10000 Requests per 10 minutes ~ 1 requests per 15 seconds
 		time.Sleep(15 * time.Second)
 	}
 }
