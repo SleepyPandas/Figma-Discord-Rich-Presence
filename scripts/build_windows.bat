@@ -3,6 +3,7 @@ echo ==========================================
 echo  Figma Discord Rich Presence - Build
 echo ==========================================
 echo.
+if not defined APP_PUBLISHER set "APP_PUBLISHER=Sleepy Pandas / Anthony Hua"
 
 :: Step 1: Build the executable
 echo [1/2] Building figma-rpc.exe (no console window)...
