@@ -1,0 +1,56 @@
+name: Build Installers
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Build Executable
+      run: |
+        cd src
+        go build -ldflags "-H windowsgui" -o ../figma-rpc.exe .
+        
+    - name: Compile Installer
+      uses: Minionguyjosh/Inno-Setup-Action@v1.2.2
+      with:
+        path: scripts/installer.iss
+        
+    - name: Upload Installer
+      uses: actions/upload-artifact@v3
+      with:
+        name: Windows-Installer
+        path: dist/FigmaRPC_Setup.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        
+    - name: Build Package
+      run: |
+        chmod +x scripts/build_macos_pkg.sh
+        ./scripts/build_macos_pkg.sh
+        
+    - name: Upload Installer
+      uses: actions/upload-artifact@v3
+      with:
+        name: macOS-Installer
+        path: dist/FigmaRPC_Installer.pkg

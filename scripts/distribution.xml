@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+    <title>Figma Discord Rich Presence</title>
+    <welcome file="welcome.html"/>
+    <options customize="always" require-scripts="false"/>
+    <domain enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+    
+    <choices-outline>
+        <line choice="default">
+            <line choice="com.figma.discord-rpc"/>
+        </line>
+    </choices-outline>
+    
+    <choice id="default"/>
+    
+    <choice id="com.figma.discord-rpc" visible="false">
+        <pkg-ref id="com.figma.discord-rpc"/>
+    </choice>
+    
+    <pkg-ref id="com.figma.discord-rpc" version="1.0.0" onConclusion="none">component.pkg</pkg-ref>
+</installer-gui-script>
