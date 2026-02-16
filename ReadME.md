@@ -18,7 +18,7 @@ If you have any suggestions make an issue! :)
 - **Cross-Platform**: Native support for **Windows** and **macOS**.
 - **Zero Config**: Just run it, and it works (assuming you have the Discord desktop app running).
 
-## Installation
+## Installation 
 
 ### Website 
 1. Visit the github pages website for distribution (Coming Soon!)
@@ -34,6 +34,14 @@ If you have any suggestions make an issue! :)
 2. Download the latest `FigmaRPC_Installer.pkg`.
 3. Run the installer (`Right Click -> Open` if you see a security warning).
 4. The app will install and start automatically.
+
+
+> [!NOTE]
+> To uninstall on Windows go into Add or Remove Programs from the start Menu and Search for Figma Discord Rich Prescence
+> 
+> MacOs will warn you about unverified publisher this is normal as it would cost me 99 USD$ to verify it...
+
+<img width="500" height="255" alt="image" src="https://github.com/user-attachments/assets/34a93241-1594-4e9d-90ed-b58fe48135a5" />
 
 ## Usage
 
