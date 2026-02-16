@@ -53,6 +53,9 @@ func main() {
 	// Track the last detected state to avoid redundant Discord updates
 	lastFilename := ""
 
+	// Track whether we are currently connected to Discord
+	loggedIn := true
+
 	for {
 		// Get the current file from Figma
 		filename, err := GetFigmaTitle()
@@ -61,38 +64,58 @@ func main() {
 		}
 
 		if filename == "" {
+			// Figma was open before but is now closed clear the presence
 			if lastFilename != "" {
-				fmt.Println("Figma closed or no file open.")
+				fmt.Println("Figma closed or no file open. Clearing presence.")
+				client.Logout()
+				loggedIn = false
 			}
-		} else if filename != lastFilename {
-			fmt.Println("State changed:", filename)
-
-			details := "Editing File"
-			state := filename
-			smallImage := "edit"
-			smallText := "Editing"
-
-			if filename == "Browsing Files" {
-				details = "In Home"
-				state = "Browsing Files"
-				smallImage = "folder"
-				smallText = "Browsing"
+		} else {
+			// Figma is open reconnect to Discord if we logged out
+			if !loggedIn {
+				fmt.Println("Figma detected again, reconnecting to Discord...")
+				for {
+					err = client.Login(clientID)
+					if err == nil {
+						break
+					}
+					fmt.Println("Waiting for Discord... retrying in 5s")
+					time.Sleep(5 * time.Second)
+				}
+				loggedIn = true
+				now = time.Now() // reset session timer
 			}
 
-			err = client.SetActivity(client.Activity{
-				State:      state,
-				Details:    details,
-				LargeImage: "largeimageid",
-				LargeText:  "Figma",
-				SmallImage: smallImage,
-				SmallText:  smallText,
-				Timestamps: &client.Timestamps{
-					Start: &now,
-				},
-			})
+			if filename != lastFilename {
+				fmt.Println("State changed:", filename)
 
-			if err != nil {
-				fmt.Println("Failed to set activity:", err)
+				details := "Editing File"
+				state := filename
+				smallImage := "edit"
+				smallText := "Editing"
+
+				if filename == "Browsing Files" {
+					details = "In Home"
+					state = "Browsing Files"
+					smallImage = "folder"
+					smallText = "Browsing"
+				}
+
+				err = client.SetActivity(client.Activity{
+					State:      state,
+					Details:    details,
+					LargeImage: "largeimageid",
+					LargeText:  "Figma",
+					SmallImage: smallImage,
+					SmallText:  smallText,
+					Timestamps: &client.Timestamps{
+						Start: &now,
+					},
+				})
+
+				if err != nil {
+					fmt.Println("Failed to set activity:", err)
+				}
 			}
 		}
 
