@@ -1,6 +1,13 @@
 :root {
   --accent: #0b66ff;
   --accent-hover: #0052d6;
+  --particle-core: rgba(11, 102, 255, 0.72);
+  --particle-core-strong: rgba(11, 102, 255, 0.88);
+  --cursor-field-opacity: 0.56;
+  --cursor-x: 50vw;
+  --cursor-y: 50vh;
+  --cursor-shift-x: 0px;
+  --cursor-shift-y: 0px;
   --bg-top: #f5f8ff;
   --bg-bottom: #eaf0ff;
   --text-primary: #0f172a;
@@ -10,6 +17,86 @@
   --focus-ring: rgba(11, 102, 255, 0.35);
   --radius: 22px;
   --shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
+  --shadow-hover: 0 28px 70px rgba(15, 23, 42, 0.13);
+  --chip-border: rgba(148, 163, 184, 0.34);
+  --chip-bg: rgba(255, 255, 255, 0.74);
+  --chip-hover-border: rgba(11, 102, 255, 0.4);
+  --chip-hover-bg: rgba(255, 255, 255, 0.95);
+  --button-dark-text: #f8fafc;
+  --button-dark-bg: #0b0f19;
+  --button-dark-border: #0b0f19;
+  --button-dark-hover-bg: #171d2b;
+  --button-dark-hover-border: #171d2b;
+  --button-light-text: #0b3b8c;
+  --button-light-bg: #dbeafe;
+  --button-light-border: #93c5fd;
+  --button-light-hover-text: #0a3278;
+  --button-light-hover-bg: #bfdbfe;
+  --button-light-hover-border: #60a5fa;
+  --button-ghost-border: rgba(11, 102, 255, 0.35);
+  --button-ghost-bg: rgba(255, 255, 255, 0.8);
+  --button-ghost-hover-bg: rgba(255, 255, 255, 0.95);
+  --note-border: rgba(148, 163, 184, 0.34);
+  --note-bg: rgba(255, 255, 255, 0.66);
+  --preview-border: rgba(148, 163, 184, 0.36);
+  --preview-bg: #05070e;
+  --preview-shadow: 0 16px 35px rgba(15, 23, 42, 0.2);
+  --step-badge-bg: rgba(11, 102, 255, 0.12);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --accent: #f5f5f5;
+  --accent-hover: #ffffff;
+  --particle-core: rgba(255, 255, 255, 0.42);
+  --particle-core-strong: rgba(255, 255, 255, 0.8);
+  --cursor-field-opacity: 0.72;
+  --bg-top: #000000;
+  --bg-bottom: #000000;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --surface: rgba(10, 10, 10, 0.82);
+  --surface-border: rgba(255, 255, 255, 0.14);
+  --focus-ring: rgba(255, 255, 255, 0.36);
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  --shadow-hover: 0 28px 70px rgba(0, 0, 0, 0.8);
+  --chip-border: rgba(255, 255, 255, 0.2);
+  --chip-bg: rgba(10, 10, 10, 0.9);
+  --chip-hover-border: rgba(255, 255, 255, 0.42);
+  --chip-hover-bg: rgba(24, 24, 24, 0.95);
+  --button-dark-text: #111111;
+  --button-dark-bg: #f5f5f5;
+  --button-dark-border: #f5f5f5;
+  --button-dark-hover-bg: #ffffff;
+  --button-dark-hover-border: #ffffff;
+  --button-light-text: #f3f4f6;
+  --button-light-bg: rgba(20, 20, 20, 0.96);
+  --button-light-border: rgba(255, 255, 255, 0.3);
+  --button-light-hover-text: #ffffff;
+  --button-light-hover-bg: rgba(34, 34, 34, 0.98);
+  --button-light-hover-border: rgba(255, 255, 255, 0.45);
+  --button-ghost-border: rgba(255, 255, 255, 0.35);
+  --button-ghost-bg: rgba(15, 15, 15, 0.85);
+  --button-ghost-hover-bg: rgba(30, 30, 30, 0.95);
+  --note-border: rgba(255, 255, 255, 0.2);
+  --note-bg: rgba(10, 10, 10, 0.82);
+  --preview-border: rgba(255, 255, 255, 0.25);
+  --preview-bg: #000000;
+  --preview-shadow: 0 16px 35px rgba(0, 0, 0, 0.75);
+  --step-badge-bg: rgba(255, 255, 255, 0.14);
+}
+
+html[data-theme="dark"] .bg-shape-a {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+}
+
+html[data-theme="dark"] .bg-shape-b {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+}
+
+html[data-theme="dark"] .dot-field,
+html[data-theme="dark"] .dot-arc {
+  background-image: radial-gradient(circle at center, var(--particle-core) 1.2px, transparent 1.4px);
 }
 
 *,
@@ -38,7 +125,8 @@ body {
   --px: 0px;
   --py: 0px;
   transform: translate3d(var(--px), var(--py), 0);
-  transition: transform 420ms ease;
+  transition: transform 170ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 
 .bg-shape {
@@ -70,13 +158,13 @@ body {
   position: fixed;
   pointer-events: none;
   z-index: -2;
-  background-image: radial-gradient(circle at center, rgba(11, 102, 255, 0.65) 1.2px, transparent 1.4px);
+  background-image: radial-gradient(circle at center, var(--particle-core) 1.2px, transparent 1.4px);
   background-size: 22px 22px;
 }
 
 .dot-field-a {
   inset: 0;
-  opacity: 0.2;
+  opacity: 0.27;
   animation: dotDrift 30s linear infinite;
 }
 
@@ -105,6 +193,20 @@ body {
   animation: arcPulse 14s ease-in-out infinite;
 }
 
+.cursor-field {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: var(--cursor-field-opacity);
+  background-image: radial-gradient(circle at center, var(--particle-core-strong) 1.3px, transparent 1.6px);
+  background-size: 18px 18px;
+  transform: translate3d(var(--cursor-shift-x), var(--cursor-shift-y), 0);
+  mask-image: radial-gradient(circle 200px at var(--cursor-x) var(--cursor-y), rgba(0, 0, 0, 1) 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle 200px at var(--cursor-x) var(--cursor-y), rgba(0, 0, 0, 1) 0%, transparent 72%);
+  transition: transform 120ms ease-out;
+}
+
 .container {
   width: min(1080px, calc(100% - 2rem));
   margin: 0 auto;
@@ -118,6 +220,7 @@ body {
 .header-brand {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.55rem;
 }
 
@@ -148,21 +251,43 @@ body {
   border-radius: 999px;
   color: var(--text-secondary);
   text-decoration: none;
-  border: 1px solid rgba(148, 163, 184, 0.34);
-  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--chip-border);
+  background: var(--chip-bg);
   transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
 }
 
 .github-profile-link:hover {
   color: var(--text-primary);
-  border-color: rgba(11, 102, 255, 0.4);
-  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--chip-hover-border);
+  background: var(--chip-hover-bg);
   transform: translateY(-1px);
 }
 
 .github-icon {
   width: 1.05rem;
   height: 1.05rem;
+}
+
+.theme-toggle {
+  min-height: 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--chip-border);
+  background: var(--chip-bg);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0 0.75rem;
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.theme-toggle:hover {
+  color: var(--text-primary);
+  border-color: var(--chip-hover-border);
+  background: var(--chip-hover-bg);
+  transform: translateY(-1px);
 }
 
 .card {
@@ -178,7 +303,7 @@ body {
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.13);
+  box-shadow: var(--shadow-hover);
 }
 
 .hero {
@@ -284,39 +409,39 @@ p {
 }
 
 .button-dark {
-  color: #f8fafc;
-  background: #0b0f19;
-  border-color: #0b0f19;
+  color: var(--button-dark-text);
+  background: var(--button-dark-bg);
+  border-color: var(--button-dark-border);
 }
 
 .button-dark:hover {
-  background: #171d2b;
-  border-color: #171d2b;
+  background: var(--button-dark-hover-bg);
+  border-color: var(--button-dark-hover-border);
   transform: translateY(-1px);
 }
 
 .button-light {
-  color: #0b3b8c;
-  background: #dbeafe;
-  border-color: #93c5fd;
+  color: var(--button-light-text);
+  background: var(--button-light-bg);
+  border-color: var(--button-light-border);
 }
 
 .button-light:hover {
-  color: #0a3278;
-  background: #bfdbfe;
-  border-color: #60a5fa;
+  color: var(--button-light-hover-text);
+  background: var(--button-light-hover-bg);
+  border-color: var(--button-light-hover-border);
   transform: translateY(-1px);
 }
 
 .button-ghost {
   color: var(--accent);
-  border-color: rgba(11, 102, 255, 0.35);
-  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--button-ghost-border);
+  background: var(--button-ghost-bg);
 }
 
 .button-ghost:hover {
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--button-ghost-hover-bg);
   transform: translateY(-1px);
 }
 
@@ -356,10 +481,10 @@ p {
   justify-self: end;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.36);
-  background: #05070e;
+  border: 1px solid var(--preview-border);
+  background: var(--preview-bg);
   text-decoration: none;
-  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.2);
+  box-shadow: var(--preview-shadow);
 }
 
 .preview-media img {
@@ -387,7 +512,7 @@ p {
   width: 1.85rem;
   height: 1.85rem;
   border-radius: 999px;
-  background: rgba(11, 102, 255, 0.12);
+  background: var(--step-badge-bg);
   color: var(--accent);
   display: inline-flex;
   align-items: center;
@@ -397,8 +522,8 @@ p {
 }
 
 .note-strip {
-  border: 1px solid rgba(148, 163, 184, 0.34);
-  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid var(--note-border);
+  background: var(--note-bg);
   border-radius: 14px;
   padding: 1rem 1.05rem;
 }
@@ -581,5 +706,9 @@ button:focus-visible {
 
   [data-parallax] {
     transform: none !important;
+  }
+
+  .cursor-field {
+    display: none;
   }
 }

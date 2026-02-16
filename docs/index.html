@@ -14,6 +14,25 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     >
+    <script>
+      (function () {
+        try {
+          const savedTheme = localStorage.getItem("figma-rpc-theme");
+          const prefersDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+          if (savedTheme === "light" || savedTheme === "dark") {
+            document.documentElement.dataset.theme = savedTheme;
+            return;
+          }
+
+          if (prefersDark) {
+            document.documentElement.dataset.theme = "dark";
+          }
+        } catch (_error) {}
+      })();
+    </script>
     <link rel="stylesheet" href="styles.css">
     <script defer src="script.js"></script>
   </head>
@@ -21,9 +40,10 @@
     <a class="skip-link" href="#main-content">Skip to content</a>
     <div class="bg-shape bg-shape-a" aria-hidden="true"></div>
     <div class="bg-shape bg-shape-b" aria-hidden="true"></div>
-    <div class="dot-field dot-field-a" data-parallax data-depth="0.35" aria-hidden="true"></div>
+    <div class="dot-field dot-field-a" aria-hidden="true"></div>
     <div class="dot-field dot-field-b" data-parallax data-depth="0.55" aria-hidden="true"></div>
     <div class="dot-arc" data-parallax data-depth="0.85" aria-hidden="true"></div>
+    <div class="cursor-field" aria-hidden="true"></div>
 
     <header class="site-header container reveal" data-reveal>
       <div class="header-brand">
@@ -49,6 +69,15 @@
             ></path>
           </svg>
         </a>
+        <button
+          class="theme-toggle"
+          type="button"
+          data-theme-toggle
+          aria-pressed="false"
+          aria-label="Switch to dark mode"
+        >
+          Dark mode
+        </button>
       </div>
     </header>
 
@@ -66,7 +95,7 @@
               <div class="cta-row">
                 <a
                   class="button button-dark"
-                  href="https://github.com/SleepyPandas/Figma-Discord-Rich-Presence/releases/download/v1.0.0/FigmaRPC_Setup.exe"
+                  href="https://github.com/SleepyPandas/Figma-Discord-Rich-Presence/releases/download/v1.0.0/FigmaRPC_Setup-WINDOWS.exe"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -74,7 +103,7 @@
                 </a>
                 <a
                   class="button button-light"
-                  href="https://github.com/SleepyPandas/Figma-Discord-Rich-Presence/releases/download/v1.0.0/FigmaRPC_Installer.pkg"
+                  href="https://github.com/SleepyPandas/Figma-Discord-Rich-Presence/releases/download/v1.0.0/FigmaRPC_Installer-MACOS.pkg"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
