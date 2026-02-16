@@ -49,7 +49,6 @@ pkgbuild --root ../dist/root \
          --identifier $IDENTIFIER \
          --version $VERSION \
          --install-location / \
-         --scripts scripts \
          ../dist/component.pkg
 
 # 4. Build product archive (distribution pkg)
