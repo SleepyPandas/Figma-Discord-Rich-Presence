@@ -3,11 +3,13 @@
 package main
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 )
 
 // GetFigmaTitle uses AppleScript to find the Figma window title on macOS.
+// NOTE: Requires Accessibility permissions in System Settings → Privacy & Security → Accessibility.
 func GetFigmaTitle() (string, error) {
 	// AppleScript to get the name of the frontmost Figma window
 	script := `
@@ -23,8 +25,14 @@ func GetFigmaTitle() (string, error) {
 		end tell
 	`
 
-	out, err := exec.Command("osascript", "-e", script).Output()
+	out, err := exec.Command("osascript", "-e", script).CombinedOutput()
 	if err != nil {
+		outputStr := strings.TrimSpace(string(out))
+		// Detect accessibility permission errors
+		if strings.Contains(outputStr, "not allowed assistive access") ||
+			strings.Contains(outputStr, "1002") {
+			return "", fmt.Errorf("accessibility permissions required: grant access to figma-rpc in System Settings → Privacy & Security → Accessibility")
+		}
 		return "", err
 	}
 
