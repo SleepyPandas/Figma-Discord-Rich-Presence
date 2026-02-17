@@ -3,6 +3,7 @@ name: Build Installers
 on:
   workflow_dispatch:
   push:
+    branches: [ "macOS-arm-chips-FIX" ]
     tags: [ 'v*' ]
   pull_request:
     branches: [ "main" ]
