@@ -36,8 +36,8 @@ func GetFigmaTitle() (string, error) {
 
             try
                 set windowNames to name of every window of figmaProcess
-            on error
-                return ""
+            on error errMsg number errNum
+                return "__ERROR__|" & (errNum as text) & "|" & errMsg
             end try
 
             set oldDelims to AppleScript's text item delimiters
@@ -66,12 +66,40 @@ func GetFigmaTitle() (string, error) {
 		return "", nil
 	}
 
+	if strings.HasPrefix(output, "__ERROR__|") {
+		parts := strings.SplitN(output, "|", 3)
+		errNum := "unknown"
+		errMsg := output
+		if len(parts) >= 2 && strings.TrimSpace(parts[1]) != "" {
+			errNum = strings.TrimSpace(parts[1])
+		}
+		if len(parts) == 3 && strings.TrimSpace(parts[2]) != "" {
+			errMsg = strings.TrimSpace(parts[2])
+		}
+
+		if isAccessibilityError(errMsg) || errNum == "1002" {
+			accessibilityRetryAfter = time.Now().Add(accessibilityCooldown)
+			return "", fmt.Errorf("accessibility permissions required: grant access to figma-rpc in System Settings -> Privacy & Security -> Accessibility")
+		}
+
+		return "", fmt.Errorf("applescript window query failed (%s): %s", errNum, errMsg)
+	}
+
 	titles := splitWindowTitles(output)
 	homeTitle := false
+	var fallbackTitle string
 
 	for _, title := range titles {
 		base, ok := trimFigmaSuffix(title)
 		if !ok {
+			lowerTitle := strings.ToLower(strings.TrimSpace(title))
+			if strings.Contains(lowerTitle, "home") || strings.Contains(lowerTitle, "drafts") {
+				homeTitle = true
+				continue
+			}
+			if fallbackTitle == "" && strings.TrimSpace(title) != "" {
+				fallbackTitle = strings.TrimSpace(title)
+			}
 			continue
 		}
 
@@ -88,6 +116,10 @@ func GetFigmaTitle() (string, error) {
 
 	if homeTitle {
 		return "Browsing Files", nil
+	}
+
+	if fallbackTitle != "" {
+		return fallbackTitle, nil
 	}
 
 	return "", nil
