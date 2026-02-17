@@ -8,24 +8,17 @@ import (
 	"time"
 
 	"github.com/hugolgst/rich-go/client"
-	"github.com/joho/godotenv"
 )
+
+const discordClientID = "1473014472498086092"
 
 func main() {
 	fmt.Println("Figma Discord Rich Presence v1.0.0")
 
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Warning: Error loading .env file")
-	}
-	// Not a Secret But you can Either set your own VAR "Discord_Client_ID here or in an .env file"
-	clientID := os.Getenv("DISCORD_CLIENT_ID")
-	if clientID == "" {
-		fmt.Println("Error: DISCORD_CLIENT_ID is not set. Set it in your .env file or as an environment variable.")
-		os.Exit(1)
-	}
+	clientID := discordClientID
 
 	// Retry connecting to Discord until it succeeds
+	var err error
 	for {
 		err = client.Login(clientID)
 		if err == nil {

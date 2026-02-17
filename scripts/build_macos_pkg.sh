@@ -9,14 +9,21 @@ APP_NAME="Figma Discord RPC"
 BINARY_NAME="figma-rpc"
 IDENTIFIER="com.figma.discord-rpc"
 VERSION="1.0.0"
+INSTALL_DIR="/usr/local/bin"
 
 echo "Building macOS package for $APP_NAME..."
 
 # 1. Build binary
 echo "[1/4] Compiling binary..."
-mkdir -p "$ROOT_DIR/dist/root/usr/local/bin"
+mkdir -p "$ROOT_DIR/dist/root$INSTALL_DIR"
+mkdir -p "$ROOT_DIR/dist/build"
 cd "$ROOT_DIR/src"
-GOOS=darwin GOARCH=amd64 go build -o "$ROOT_DIR/dist/root/usr/local/bin/$BINARY_NAME" .
+CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o "$ROOT_DIR/dist/build/${BINARY_NAME}-amd64" .
+CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o "$ROOT_DIR/dist/build/${BINARY_NAME}-arm64" .
+lipo -create \
+  -output "$ROOT_DIR/dist/root$INSTALL_DIR/$BINARY_NAME" \
+  "$ROOT_DIR/dist/build/${BINARY_NAME}-amd64" \
+  "$ROOT_DIR/dist/build/${BINARY_NAME}-arm64"
 
 # 2. Prepare payload
 echo "[2/4] Preparing payload..."
@@ -32,8 +39,10 @@ cat > "$ROOT_DIR/dist/root/Library/LaunchAgents/$IDENTIFIER.plist" <<EOF
     <string>$IDENTIFIER</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/bin/$BINARY_NAME</string>
+        <string>$INSTALL_DIR/$BINARY_NAME</string>
     </array>
+    <key>WorkingDirectory</key>
+    <string>$INSTALL_DIR</string>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
