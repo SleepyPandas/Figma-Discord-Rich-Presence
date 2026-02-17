@@ -6,32 +6,57 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 )
 
-// GetFigmaTitle uses AppleScript to find the Figma window title on macOS.
-// NOTE: Requires Accessibility permissions in System Settings → Privacy & Security → Accessibility.
+const accessibilityCooldown = 15 * time.Second
+
+var accessibilityRetryAfter time.Time
+
+// GetFigmaTitle uses AppleScript to find Figma window titles on macOS.
+// NOTE: Requires Accessibility permissions in System Settings -> Privacy & Security -> Accessibility.
 func GetFigmaTitle() (string, error) {
-	// AppleScript to get the name of the frontmost Figma window
+	// Avoid hammering osascript if Accessibility is denied.
+	if time.Now().Before(accessibilityRetryAfter) {
+		return "", nil
+	}
+
 	script := `
-		tell application "System Events"
-			if exists (process "Figma") then
-				tell process "Figma"
-					set windowList to name of every window
-				end tell
-				return windowList as text
-			else
-				return ""
-			end if
-		end tell
-	`
+        tell application "System Events"
+            set figmaProcesses to every process whose bundle identifier is "com.figma.Desktop"
+            if (count of figmaProcesses) is 0 then
+                set figmaProcesses to every process whose name contains "Figma"
+            end if
+
+            if (count of figmaProcesses) is 0 then
+                return ""
+            end if
+
+            set figmaProcess to item 1 of figmaProcesses
+
+            try
+                set windowNames to name of every window of figmaProcess
+            on error
+                return ""
+            end try
+
+            set oldDelims to AppleScript's text item delimiters
+            set AppleScript's text item delimiters to linefeed
+            set outputText to windowNames as text
+            set AppleScript's text item delimiters to oldDelims
+            return outputText
+        end tell
+    `
 
 	out, err := exec.Command("osascript", "-e", script).CombinedOutput()
 	if err != nil {
 		outputStr := strings.TrimSpace(string(out))
-		// Detect accessibility permission errors
-		if strings.Contains(outputStr, "not allowed assistive access") ||
-			strings.Contains(outputStr, "1002") {
-			return "", fmt.Errorf("accessibility permissions required: grant access to figma-rpc in System Settings → Privacy & Security → Accessibility")
+		if isAccessibilityError(outputStr) {
+			accessibilityRetryAfter = time.Now().Add(accessibilityCooldown)
+			return "", fmt.Errorf("accessibility permissions required: grant access to figma-rpc in System Settings -> Privacy & Security -> Accessibility")
+		}
+		if outputStr != "" {
+			return "", fmt.Errorf("%w: %s", err, outputStr)
 		}
 		return "", err
 	}
@@ -41,30 +66,71 @@ func GetFigmaTitle() (string, error) {
 		return "", nil
 	}
 
-	// AppleScript returns comma-separated window names if multiple
-	// We iterate through them with the same priority logic as Windows
-	windows := strings.Split(output, ", ")
+	titles := splitWindowTitles(output)
+	homeTitle := false
 
-	var fileTitle string
-	var homeTitle string
+	for _, title := range titles {
+		base, ok := trimFigmaSuffix(title)
+		if !ok {
+			continue
+		}
 
-	for _, title := range windows {
-		if strings.Contains(title, "Figma") {
-			// Priority 1: An actual file (e.g., "Project - Figma")
-			if strings.Contains(title, " - Figma") && !strings.Contains(title, "Home") {
-				fileTitle = strings.TrimSuffix(title, " - Figma")
-				break // Found a file, stop searching
-			}
+		lowerBase := strings.ToLower(base)
+		if lowerBase == "home" || lowerBase == "drafts" {
+			homeTitle = true
+			continue
+		}
 
-			// Priority 2: Home screen
-			if strings.Contains(title, "Home - Figma") || strings.Contains(title, "Drafts - Figma") {
-				homeTitle = "Browsing Files"
-			}
+		if base != "" {
+			return base, nil
 		}
 	}
 
-	if fileTitle != "" {
-		return fileTitle, nil
+	if homeTitle {
+		return "Browsing Files", nil
 	}
-	return homeTitle, nil
+
+	return "", nil
+}
+
+func isAccessibilityError(output string) bool {
+	lower := strings.ToLower(output)
+	return strings.Contains(lower, "not allowed assistive access") ||
+		strings.Contains(lower, "not authorized to send apple events") ||
+		strings.Contains(lower, "(-1743)") ||
+		strings.Contains(lower, "1002")
+}
+
+func splitWindowTitles(output string) []string {
+	normalized := strings.ReplaceAll(output, "\r\n", "\n")
+	parts := strings.Split(normalized, "\n")
+	if len(parts) == 1 {
+		parts = strings.Split(output, ", ")
+	}
+
+	titles := make([]string, 0, len(parts))
+	for _, part := range parts {
+		title := strings.TrimSpace(part)
+		if title != "" {
+			titles = append(titles, title)
+		}
+	}
+
+	return titles
+}
+
+func trimFigmaSuffix(title string) (string, bool) {
+	suffixes := []string{
+		" - Figma",
+		" \u2013 Figma",
+		" \u2014 Figma",
+	}
+
+	for _, suffix := range suffixes {
+		if strings.HasSuffix(title, suffix) {
+			return strings.TrimSpace(strings.TrimSuffix(title, suffix)), true
+		}
+	}
+
+	return "", false
 }

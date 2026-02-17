@@ -10,7 +10,6 @@ import (
 	"github.com/hugolgst/rich-go/client"
 )
 
-
 // Replace with your Own Public Key if you desire
 
 const discordClientID = "1473014472498086092"
@@ -51,13 +50,22 @@ func main() {
 
 	// Track whether we are currently connected to Discord
 	loggedIn := true
+	lastReadErr := ""
 
 	for {
 		// Get the current file from Figma
 		filename, err := GetFigmaTitle()
 		if err != nil {
-			fmt.Println("Error reading Figma title:", err)
+			errMsg := err.Error()
+			if errMsg != lastReadErr {
+				fmt.Println("Error reading Figma title:", err)
+				lastReadErr = errMsg
+			}
+
+			time.Sleep(1 * time.Second)
+			continue
 		}
+		lastReadErr = ""
 
 		if filename == "" {
 			// Figma was open before but is now closed clear the presence
