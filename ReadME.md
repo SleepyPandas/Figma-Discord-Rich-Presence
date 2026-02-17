@@ -35,11 +35,15 @@ If you have any suggestions make an issue! :)
 3. Run the installer (`Right Click -> Open` if you see a security warning).
 4. The app will install and start automatically.
 
+> [!IMPORTANT]
+> On macOS, you must grant Accessibility permission so the app can read Figma window titles.
+> Go to **System Settings → Privacy & Security → Accessibility** and add:
+> **`/usr/local/bin/figma-rpc`**
 
-> [!NOTE]
-> To uninstall on Windows go into Add or Remove Programs from the start Menu and Search for Figma Discord Rich Prescence
-> 
-> MacOs / Windows will warn you about unverified publisher this is normal as it would cost me to verify it...
+> [!WARNING]
+> **Windows and macOS will warn that this installer/app is unsigned or from an unidentified publisher.**
+> This is expected for now because the app is not code-signed and it costs me 99+$ USD to sign it.
+
 
 <img width="500" height="255" alt="image" src="https://github.com/user-attachments/assets/34a93241-1594-4e9d-90ed-b58fe48135a5" />
 
