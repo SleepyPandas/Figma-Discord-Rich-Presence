@@ -5,7 +5,7 @@ Also it annoyed me that someone I know didn't have RPC on Figma but they use it 
 
 If you have any suggestions make an issue! :) 
 
-| Home | Working in File | Default Without Plugin |
+| Working in File  | Home  | Default Without Plugin |
 | :---: | :---: | :---: |
 | <img width="300" alt="Home" src="https://github.com/user-attachments/assets/1058ef1e-26b5-4176-8329-dfc1c5e2c22f" /> | <img width="300" alt="Working in File" src="https://github.com/user-attachments/assets/5c1c1402-303e-4180-8552-98bbdb45c8fe" /> | <img width="300" alt="Default" src="https://github.com/user-attachments/assets/2ace9e79-c094-483e-9cbd-55e765eea5e1" /> |
 
