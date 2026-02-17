@@ -34,6 +34,7 @@ If you have any suggestions make an issue! :)
 2. Download the latest `FigmaRPC_Installer.pkg`.
 3. Run the installer (`Right Click -> Open` if you see a security warning).
 4. The app will install and start automatically.
+5. If not open the terminal and type `figma-rpc`
 
 > [!IMPORTANT]
 > On macOS, you must grant Accessibility permission so the app can read Figma window titles.
