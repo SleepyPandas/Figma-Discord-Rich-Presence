@@ -65,11 +65,7 @@ If you want to build this yourself:
    git clone https://github.com/SleepyPandas/Figma-Discord-Rich-Presence.git
    cd Figma-Discord-Rich-Presence
    ```
-2. Create a `.env` file in `src/` with your Discord Client ID:
-   _Discord_clientID is already public id but I used an env because its cool you could optinally just skip this and hard code it in the main.go_
-   ```env
-   DISCORD_CLIENT_ID=your_client_id_here
-   ```
+2. No `.env` file is required for the current build.
 
 ### Build
 **Windows**:
