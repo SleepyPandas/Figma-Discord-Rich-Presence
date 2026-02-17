@@ -21,7 +21,8 @@ func GetFigmaTitle() (string, error) {
 	var homeTitle string
 
 	// Define the callback function that Windows will call for every window it finds
-	cb := syscall.NewCallback(func(hwnd uintptr, lparam uintptr) uintptr {
+	cb := syscall.NewCallback(
+		func(hwnd uintptr, lparam uintptr) uintptr {
 		// 1. Create a buffer to hold the title (256 chars is usually enough)
 		buf := make([]uint16, 256)
 
