@@ -10,6 +10,9 @@ import (
 	"github.com/hugolgst/rich-go/client"
 )
 
+
+// Replace with your Own Public Key if you desire
+
 const discordClientID = "1473014472498086092"
 
 func main() {
