@@ -13,9 +13,10 @@ import (
 // Replace with your Own Public Key if you desire
 
 const discordClientID = "1473014472498086092"
+const appVersion = "1.0.1"
 
 func main() {
-	fmt.Println("Figma Discord Rich Presence v1.0.0")
+	fmt.Printf("Figma Discord Rich Presence v%s\n", appVersion)
 
 	clientID := discordClientID
 

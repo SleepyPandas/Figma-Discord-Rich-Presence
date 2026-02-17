@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Figma Discord Rich Presence
-AppVersion=1.0.0
+AppVersion=1.0.1
 AppPublisher={#GetEnv('APP_PUBLISHER')}
 AppPublisherURL=https://github.com/SleepyPandas/Figma-Discord-Rich-Presence
 DefaultDirName={autopf}\Figma Discord RPC
