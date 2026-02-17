@@ -35,11 +35,15 @@ If you have any suggestions make an issue! :)
 3. Run the installer (`Right Click -> Open` if you see a security warning).
 4. The app will install and start automatically.
 
+> [!IMPORTANT]
+> On macOS, you must grant Accessibility permission so the app can read Figma window titles.
+> Go to **System Settings → Privacy & Security → Accessibility** and add:
+> **`/usr/local/bin/figma-rpc`**
 
-> [!NOTE]
-> To uninstall on Windows go into Add or Remove Programs from the start Menu and Search for Figma Discord Rich Prescence
-> 
-> MacOs / Windows will warn you about unverified publisher this is normal as it would cost me to verify it...
+> [!WARNING]
+> **Windows and macOS will warn that this installer/app is unsigned or from an unidentified publisher.**
+> This is expected for now because the app is not code-signed and it costs me 99+$ USD to sign it.
+
 
 <img width="500" height="255" alt="image" src="https://github.com/user-attachments/assets/34a93241-1594-4e9d-90ed-b58fe48135a5" />
 
@@ -65,11 +69,7 @@ If you want to build this yourself:
    git clone https://github.com/SleepyPandas/Figma-Discord-Rich-Presence.git
    cd Figma-Discord-Rich-Presence
    ```
-2. Create a `.env` file in `src/` with your Discord Client ID:
-   _Discord_clientID is already public id but I used an env because its cool you could optinally just skip this and hard code it in the main.go_
-   ```env
-   DISCORD_CLIENT_ID=your_client_id_here
-   ```
+2. No `.env` file is required for the current build.
 
 ### Build
 **Windows**:
