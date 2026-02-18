@@ -16,11 +16,14 @@ const discordClientID = "1473014472498086092"
 const appVersion = "1.0.1"
 
 type rpcManagerState struct {
-	clientID     string
-	rpcEnabled   bool
-	connected    bool
-	sessionStart time.Time
-	lastFilename string
+	clientID        string
+	rpcEnabled      bool
+	privacyMode     bool
+	customLabel     string
+	connected       bool
+	sessionStart    time.Time
+	currentFilename string
+	lastActivitySig string
 }
 
 func main() {
@@ -127,11 +130,14 @@ func runRPCManager(clientID string, cfg *Config, events *UIEvents, filenameUpdat
 	defer wg.Done()
 
 	state := rpcManagerState{
-		clientID:     clientID,
-		rpcEnabled:   cfg.RPCEnabled,
-		connected:    false,
-		sessionStart: time.Now(),
-		lastFilename: "",
+		clientID:        clientID,
+		rpcEnabled:      cfg.RPCEnabled,
+		privacyMode:     cfg.PrivacyMode,
+		customLabel:     sanitizeCustomLabel(cfg.CustomLabel),
+		connected:       false,
+		sessionStart:    time.Now(),
+		currentFilename: "",
+		lastActivitySig: "",
 	}
 
 	if !state.rpcEnabled {
@@ -148,7 +154,7 @@ func runRPCManager(clientID string, cfg *Config, events *UIEvents, filenameUpdat
 
 		case <-events.Disconnect:
 			state.rpcEnabled = false
-			state.lastFilename = ""
+			state.lastActivitySig = ""
 			if state.connected {
 				fmt.Println("Disconnecting from Discord RPC.")
 				client.Logout()
@@ -158,51 +164,63 @@ func runRPCManager(clientID string, cfg *Config, events *UIEvents, filenameUpdat
 		case <-events.Reconnect:
 			state.rpcEnabled = true
 			state.sessionStart = time.Now()
-			state.lastFilename = ""
-			ensureConnected(&state, stop)
+			state.lastActivitySig = ""
+			syncActivity(&state, stop, true)
 
 		case updated := <-events.ConfigChanged:
 			if updated == nil {
 				continue
 			}
-			if updated.RPCEnabled == state.rpcEnabled {
-				continue
-			}
-			if updated.RPCEnabled {
-				state.rpcEnabled = true
-				state.sessionStart = time.Now()
-				state.lastFilename = ""
-				ensureConnected(&state, stop)
-			} else {
-				state.rpcEnabled = false
-				state.lastFilename = ""
+
+			prevRPCEnabled := state.rpcEnabled
+			prevPrivacyMode := state.privacyMode
+			prevLabel := state.customLabel
+
+			state.rpcEnabled = updated.RPCEnabled
+			state.privacyMode = updated.PrivacyMode
+			state.customLabel = sanitizeCustomLabel(updated.CustomLabel)
+
+			if !state.rpcEnabled {
+				state.lastActivitySig = ""
 				if state.connected {
 					fmt.Println("RPC disabled from settings.")
 					client.Logout()
 					state.connected = false
 				}
+				continue
+			}
+
+			if !prevRPCEnabled && state.rpcEnabled {
+				state.rpcEnabled = true
+				state.sessionStart = time.Now()
+				state.lastActivitySig = ""
+				syncActivity(&state, stop, true)
+				continue
+			}
+
+			if prevPrivacyMode != state.privacyMode || prevLabel != state.customLabel {
+				syncActivity(&state, stop, true)
 			}
 
 		case filename := <-filenameUpdates:
-			handleFilenameUpdate(&state, filename, stop)
+			state.currentFilename = filename
+			syncActivity(&state, stop, false)
 		}
 	}
 }
 
-func handleFilenameUpdate(state *rpcManagerState, filename string, stop <-chan struct{}) {
+func syncActivity(state *rpcManagerState, stop <-chan struct{}, force bool) {
 	if !state.rpcEnabled {
 		return
 	}
 
-	if filename == "" {
-		if state.lastFilename != "" {
-			fmt.Println("Figma closed or no file open. Clearing presence.")
-		}
+	if state.currentFilename == "" {
 		if state.connected {
+			fmt.Println("Figma closed or no file open. Clearing presence.")
 			client.Logout()
 			state.connected = false
 		}
-		state.lastFilename = ""
+		state.lastActivitySig = ""
 		return
 	}
 
@@ -210,17 +228,19 @@ func handleFilenameUpdate(state *rpcManagerState, filename string, stop <-chan s
 		return
 	}
 
-	if filename == state.lastFilename {
+	activity := activityFromFilename(state.currentFilename, state.privacyMode, state.customLabel, state.sessionStart)
+	signature := activitySignature(activity)
+	if !force && signature == state.lastActivitySig {
 		return
 	}
 
-	fmt.Println("State changed:", filename)
-	if err := client.SetActivity(activityFromFilename(filename, state.sessionStart)); err != nil {
+	fmt.Println("State changed:", state.currentFilename)
+	if err := client.SetActivity(activity); err != nil {
 		fmt.Println("Failed to set activity:", err)
 		return
 	}
 
-	state.lastFilename = filename
+	state.lastActivitySig = signature
 }
 
 func ensureConnected(state *rpcManagerState, stop <-chan struct{}) bool {
@@ -246,7 +266,21 @@ func ensureConnected(state *rpcManagerState, stop <-chan struct{}) bool {
 	}
 }
 
-func activityFromFilename(filename string, start time.Time) client.Activity {
+func activityFromFilename(filename string, privacyMode bool, customLabel string, start time.Time) client.Activity {
+	if privacyMode {
+		return client.Activity{
+			State:      customLabel,
+			Details:    "Privacy Mode",
+			LargeImage: "largeimageid",
+			LargeText:  "Figma",
+			SmallImage: "privacy",
+			SmallText:  "Private",
+			Timestamps: &client.Timestamps{
+				Start: &start,
+			},
+		}
+	}
+
 	details := "Editing File"
 	state := filename
 	smallImage := "edit"
@@ -270,6 +304,17 @@ func activityFromFilename(filename string, start time.Time) client.Activity {
 			Start: &start,
 		},
 	}
+}
+
+func activitySignature(activity client.Activity) string {
+	return fmt.Sprintf("%s|%s|%s|%s", activity.Details, activity.State, activity.SmallImage, activity.SmallText)
+}
+
+func sanitizeCustomLabel(label string) string {
+	if label == "" {
+		return "Working on a project"
+	}
+	return label
 }
 
 func pushLatestFilename(ch chan string, value string) {
