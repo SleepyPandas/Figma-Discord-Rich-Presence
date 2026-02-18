@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sync"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -264,12 +266,27 @@ func (ui *AppUI) buildContent() fyne.CanvasObject {
 	customLabelEntry := widget.NewEntry()
 	customLabelEntry.SetPlaceHolder("Working on a project")
 	customLabelEntry.SetText(ui.Config.CustomLabel)
+	var customLabelDebounceMu sync.Mutex
+	var customLabelDebounceTimer *time.Timer
 	customLabelEntry.OnChanged = func(text string) {
-		ui.Config.CustomLabel = text
-		if err := ui.Config.Save(); err != nil {
-			fmt.Println("Error saving config:", err)
+		customLabelDebounceMu.Lock()
+		if customLabelDebounceTimer != nil {
+			customLabelDebounceTimer.Stop()
 		}
-		ui.notifyConfigChanged()
+
+		latestText := text
+		customLabelDebounceTimer = time.AfterFunc(5*time.Second, func() {
+			ui.Config.CustomLabel = latestText
+			if err := ui.Config.Save(); err != nil {
+				fmt.Println("Error saving config:", err)
+			}
+			ui.notifyConfigChanged()
+
+			customLabelDebounceMu.Lock()
+			customLabelDebounceTimer = nil
+			customLabelDebounceMu.Unlock()
+		})
+		customLabelDebounceMu.Unlock()
 	}
 
 	customLabelLabel := widget.NewLabel("Replacement Label")
