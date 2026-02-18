@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Figma Discord Rich Presence
-AppVersion=1.0.1
+AppVersion=2.0.0
 AppPublisher={#GetEnv('APP_PUBLISHER')}
 AppPublisherURL=https://github.com/SleepyPandas/Figma-Discord-Rich-Presence
 DefaultDirName={autopf}\Figma Discord RPC
@@ -13,6 +13,8 @@ OutputBaseFilename=FigmaRPC_Setup
 Compression=lzma
 SolidCompression=yes
 UninstallDisplayName=Figma Discord Rich Presence
+UninstallDisplayIcon={app}\figma-rpc.exe
+SetupIconFile=..\assets\app-icon.ico
 PrivilegesRequired=lowest
 WizardStyle=modern
 
@@ -28,13 +30,16 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "..\figma-rpc.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; The .env config file
 Source: "..\src\.env"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+; App icons for tray and shortcut display
+Source: "..\assets\app-icon.png"; DestDir: "{app}\assets"; Flags: ignoreversion
+Source: "..\assets\app-icon.ico"; DestDir: "{app}\assets"; Flags: ignoreversion
 
 [Icons]
 ; Start Menu shortcut
-Name: "{group}\Figma Discord RPC"; Filename: "{app}\figma-rpc.exe"
+Name: "{group}\Figma Discord RPC"; Filename: "{app}\figma-rpc.exe"; IconFilename: "{app}\assets\app-icon.ico"
 Name: "{group}\Uninstall Figma Discord RPC"; Filename: "{uninstallexe}"
 ; Desktop shortcut (optional)
-Name: "{autodesktop}\Figma Discord RPC"; Filename: "{app}\figma-rpc.exe"; Tasks: desktopicon
+Name: "{autodesktop}\Figma Discord RPC"; Filename: "{app}\figma-rpc.exe"; IconFilename: "{app}\assets\app-icon.ico"; Tasks: desktopicon
 
 [Registry]
 ; Run on startup (only if user checks the box)

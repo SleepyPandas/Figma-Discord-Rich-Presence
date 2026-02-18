@@ -1,0 +1,401 @@
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"image"
+	"image/color"
+	"net/url"
+	"os"
+	"path/filepath"
+	"sync"
+	"time"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/widget"
+
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+)
+
+const (
+	uiOuterPadding = 16
+	uiCardPadding  = 12
+	uiSectionGap   = 14
+	releasesURL    = "https://github.com/SleepyPandas/Figma-Discord-Rich-Presence/releases"
+)
+
+var (
+	colorConnected    = color.NRGBA{R: 76, G: 175, B: 80, A: 255}
+	colorDisconnected = color.NRGBA{R: 244, G: 67, B: 54, A: 255}
+	colorCardFill     = color.NRGBA{R: 10, G: 10, B: 10, A: 209}
+	colorCardStroke   = color.NRGBA{R: 255, G: 255, B: 255, A: 36}
+)
+
+// UIEvents carries signals from the UI to the RPC loop.
+type UIEvents struct {
+	Disconnect    chan struct{}
+	Reconnect     chan struct{}
+	ConfigChanged chan *Config
+}
+
+// NewUIEvents creates a new UIEvents with buffered channels.
+func NewUIEvents() *UIEvents {
+	return &UIEvents{
+		Disconnect:    make(chan struct{}, 1),
+		Reconnect:     make(chan struct{}, 1),
+		ConfigChanged: make(chan *Config, 1),
+	}
+}
+
+// statusIndicator holds the UI elements for the connection status display.
+type statusIndicator struct {
+	circle *canvas.Circle
+	label  *widget.Label
+}
+
+func newStatusIndicator() *statusIndicator {
+	circle := canvas.NewCircle(colorConnected)
+	label := widget.NewLabel("Connected")
+	label.TextStyle = fyne.TextStyle{Bold: true}
+
+	return &statusIndicator{circle: circle, label: label}
+}
+
+func (s *statusIndicator) setConnected() {
+	s.circle.FillColor = colorConnected
+	s.circle.Refresh()
+	s.label.SetText("Connected")
+}
+
+func (s *statusIndicator) setDisconnected() {
+	s.circle.FillColor = colorDisconnected
+	s.circle.Refresh()
+	s.label.SetText("Disconnected")
+}
+
+// AppUI holds all the Fyne app components.
+type AppUI struct {
+	App    fyne.App
+	Window fyne.Window
+	Icon   fyne.Resource
+	Events *UIEvents
+	Config *Config
+	Status *statusIndicator
+}
+
+// SetupUI creates the Fyne application, window, system tray, and all widgets.
+// It returns an AppUI that the caller can use to run the app.
+func SetupUI(cfg *Config, events *UIEvents) *AppUI {
+	fyneApp := app.NewWithID("com.figma.discord-rpc")
+	fyneApp.Settings().SetTheme(newWebsiteDarkTheme())
+	icon := loadAppIconResource()
+	if icon != nil {
+		fyneApp.SetIcon(icon)
+	}
+
+	win := fyneApp.NewWindow(fmt.Sprintf("Figma Discord Rich Presence  v%s", appVersion))
+	win.Resize(fyne.NewSize(460, 500))
+	win.SetFixedSize(true)
+	win.CenterOnScreen()
+
+	ui := &AppUI{
+		App:    fyneApp,
+		Window: win,
+		Icon:   icon,
+		Events: events,
+		Config: cfg,
+		Status: newStatusIndicator(),
+	}
+	if !cfg.RPCEnabled {
+		ui.Status.setDisconnected()
+	}
+
+	// Build the window content
+	win.SetContent(ui.buildContent())
+
+	// Minimize to tray on close instead of quitting
+	win.SetCloseIntercept(func() {
+		win.Hide()
+	})
+
+	// Setup system tray
+	ui.setupSystemTray()
+
+	return ui
+}
+
+func loadAppIconResource() fyne.Resource {
+	candidates := []string{
+		filepath.Join("assets", "app-icon.png"),
+		filepath.Join("assets", "icon.png"),
+		filepath.Join("..", "assets", "app-icon.png"),
+		filepath.Join("..", "assets", "icon.png"),
+		"icon.png",
+	}
+
+	if exePath, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exePath)
+		candidates = append(candidates,
+			filepath.Join(exeDir, "icon.png"),
+			filepath.Join(exeDir, "assets", "app-icon.png"),
+			filepath.Join(exeDir, "assets", "icon.png"),
+		)
+	}
+
+	seen := make(map[string]struct{})
+	for _, path := range candidates {
+		if _, exists := seen[path]; exists {
+			continue
+		}
+		seen[path] = struct{}{}
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+
+		if _, _, decodeErr := image.DecodeConfig(bytes.NewReader(data)); decodeErr != nil {
+			fmt.Println("Skipping icon file with unsupported format:", path, decodeErr)
+			continue
+		}
+
+		return fyne.NewStaticResource(filepath.Base(path), data)
+	}
+
+	return nil
+}
+
+func (ui *AppUI) handleDisconnectAction() {
+	ui.Config.RPCEnabled = false
+	if err := ui.Config.Save(); err != nil {
+		fmt.Println("Error saving config:", err)
+	}
+	ui.Status.setDisconnected()
+	select {
+	case ui.Events.Disconnect <- struct{}{}:
+	default:
+	}
+}
+
+func (ui *AppUI) handleReconnectAction() {
+	ui.Config.RPCEnabled = true
+	if err := ui.Config.Save(); err != nil {
+		fmt.Println("Error saving config:", err)
+	}
+	ui.Status.setConnected()
+	select {
+	case ui.Events.Reconnect <- struct{}{}:
+	default:
+	}
+}
+
+func spacer(height float32) fyne.CanvasObject {
+	gap := canvas.NewRectangle(color.Transparent)
+	gap.SetMinSize(fyne.NewSize(0, height))
+	return gap
+}
+
+func horizontalSpacer(width float32) fyne.CanvasObject {
+	gap := canvas.NewRectangle(color.Transparent)
+	gap.SetMinSize(fyne.NewSize(width, 0))
+	return gap
+}
+
+func sectionHeader(title, subtitle string) fyne.CanvasObject {
+	titleLabel := widget.NewLabel(title)
+	titleLabel.TextStyle = fyne.TextStyle{Bold: true}
+
+	subtitleLabel := widget.NewLabel(subtitle)
+	subtitleLabel.Wrapping = fyne.TextWrapWord
+
+	return container.NewVBox(titleLabel, subtitleLabel)
+}
+
+func sectionCard(objects ...fyne.CanvasObject) fyne.CanvasObject {
+	background := canvas.NewRectangle(colorCardFill)
+	background.StrokeColor = colorCardStroke
+	background.StrokeWidth = 1
+	background.CornerRadius = 14
+
+	content := container.NewVBox(objects...)
+	padded := container.NewBorder(
+		spacer(uiCardPadding),
+		spacer(uiCardPadding),
+		horizontalSpacer(uiCardPadding),
+		horizontalSpacer(uiCardPadding),
+		content,
+	)
+	return container.NewStack(background, padded)
+}
+
+func statusDot(dot *canvas.Circle, size float32) fyne.CanvasObject {
+	return container.NewGridWrap(fyne.NewSize(size, size), dot)
+}
+
+// buildContent creates the main settings panel layout.
+func (ui *AppUI) buildContent() fyne.CanvasObject {
+	// Status section
+	statusRowContent := container.NewHBox(
+		container.NewCenter(statusDot(ui.Status.circle, 14)),
+		horizontalSpacer(8),
+		ui.Status.label,
+	)
+	statusRow := container.NewCenter(statusRowContent)
+	statusCard := sectionCard(
+		sectionHeader("Status", "Current Discord Rich Presence connection."),
+		spacer(8),
+		statusRow,
+	)
+
+	// Privacy section
+	privacyCheck := widget.NewCheck("Privacy Mode", func(checked bool) {
+		ui.Config.PrivacyMode = checked
+		if err := ui.Config.Save(); err != nil {
+			fmt.Println("Error saving config:", err)
+		}
+		ui.notifyConfigChanged()
+	})
+	privacyCheck.Checked = ui.Config.PrivacyMode
+
+	customLabelEntry := widget.NewEntry()
+	customLabelEntry.SetPlaceHolder("Working on a project")
+	customLabelEntry.SetText(ui.Config.CustomLabel)
+	var customLabelDebounceMu sync.Mutex
+	var customLabelDebounceTimer *time.Timer
+	customLabelEntry.OnChanged = func(text string) {
+		customLabelDebounceMu.Lock()
+		if customLabelDebounceTimer != nil {
+			customLabelDebounceTimer.Stop()
+		}
+
+		latestText := text
+		customLabelDebounceTimer = time.AfterFunc(5*time.Second, func() {
+			ui.Config.CustomLabel = latestText
+			if err := ui.Config.Save(); err != nil {
+				fmt.Println("Error saving config:", err)
+			}
+			ui.notifyConfigChanged()
+
+			customLabelDebounceMu.Lock()
+			customLabelDebounceTimer = nil
+			customLabelDebounceMu.Unlock()
+		})
+		customLabelDebounceMu.Unlock()
+	}
+
+	customLabelLabel := widget.NewLabel("Replacement Label")
+	customLabelLabel.TextStyle = fyne.TextStyle{Bold: true}
+
+	privacyCard := sectionCard(
+		sectionHeader("Privacy", "Hide project names and replace them with your custom text."),
+		spacer(8),
+		privacyCheck,
+		spacer(4),
+		customLabelLabel,
+		customLabelEntry,
+	)
+
+	// Connection section
+	disconnectBtn := widget.NewButton("Disconnect", ui.handleDisconnectAction)
+	disconnectBtn.Importance = widget.DangerImportance
+
+	reconnectBtn := widget.NewButton("Reconnect", ui.handleReconnectAction)
+	reconnectBtn.Importance = widget.SuccessImportance
+
+	connectionCard := sectionCard(
+		sectionHeader("Connection", "Control Discord RPC without exiting the app."),
+		spacer(8),
+		container.NewGridWithColumns(2, disconnectBtn, reconnectBtn),
+	)
+
+	// Version footer
+	updatesFallback := widget.NewLabel("Check for updates")
+	updatesFallback.Alignment = fyne.TextAlignCenter
+	var updatesLink fyne.CanvasObject = updatesFallback
+	if parsedReleasesURL, err := url.Parse(releasesURL); err == nil {
+		link := widget.NewHyperlink("Check for updates", parsedReleasesURL)
+		link.Alignment = fyne.TextAlignCenter
+		link.TextStyle = fyne.TextStyle{Bold: true}
+		updatesLink = link
+	} else {
+		fmt.Println("Error parsing releases URL:", err)
+	}
+
+	versionLabel := widget.NewLabel(fmt.Sprintf("v%s", appVersion))
+	versionLabel.Alignment = fyne.TextAlignCenter
+	versionLabel.TextStyle = fyne.TextStyle{Italic: true}
+
+	content := container.NewVBox(
+		statusCard,
+		spacer(uiSectionGap),
+		privacyCard,
+		spacer(uiSectionGap),
+		connectionCard,
+		spacer(8),
+		updatesLink,
+		spacer(4),
+		versionLabel,
+	)
+
+	return container.NewBorder(
+		spacer(uiOuterPadding),
+		spacer(uiOuterPadding),
+		horizontalSpacer(uiOuterPadding),
+		horizontalSpacer(uiOuterPadding),
+		content,
+	)
+}
+
+// setupSystemTray configures the system tray icon and menu.
+func (ui *AppUI) setupSystemTray() {
+	if deskApp, ok := ui.App.(desktop.App); ok {
+		if ui.Icon != nil {
+			deskApp.SetSystemTrayIcon(ui.Icon)
+		}
+		deskApp.SetSystemTrayWindow(ui.Window)
+
+		menu := fyne.NewMenu("FigmaRPC",
+			fyne.NewMenuItem("Show Settings", func() {
+				ui.Window.Show()
+				ui.Window.RequestFocus()
+			}),
+			fyne.NewMenuItemSeparator(),
+			fyne.NewMenuItem("Disconnect from RPC", ui.handleDisconnectAction),
+			fyne.NewMenuItem("Reconnect to RPC", ui.handleReconnectAction),
+			fyne.NewMenuItemSeparator(),
+			fyne.NewMenuItem("Quit", func() {
+				ui.App.Quit()
+			}),
+		)
+		deskApp.SetSystemTrayMenu(menu)
+	}
+}
+
+// notifyConfigChanged sends the current config to the RPC loop (non-blocking).
+func (ui *AppUI) notifyConfigChanged() {
+	select {
+	case ui.Events.ConfigChanged <- ui.Config:
+	default:
+	}
+}
+
+// Run starts the Fyne event loop. This blocks until the app exits.
+// If FirstRun is true, the window is shown; otherwise it starts hidden in the tray.
+func (ui *AppUI) Run() {
+	if ui.Config.FirstRun {
+		ui.Config.FirstRun = false
+		if err := ui.Config.Save(); err != nil {
+			fmt.Println("Error saving first-run flag:", err)
+		}
+		ui.Window.Show()
+	}
+
+	// Start the Fyne event loop (blocks main thread)
+	ui.App.Run()
+}

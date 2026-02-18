@@ -8,18 +8,40 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_NAME="Figma Discord RPC"
 BINARY_NAME="figma-rpc"
 IDENTIFIER="com.figma.discord-rpc"
-VERSION="1.0.1"
+VERSION="2.0.0"
 INSTALL_DIR="/usr/local/bin"
 
 echo "Building macOS package for $APP_NAME..."
 
 # 1. Build binary
-echo "[1/4] Compiling binary..."
+echo "[1/5] Compiling binary..."
 mkdir -p "$ROOT_DIR/dist/root$INSTALL_DIR"
 mkdir -p "$ROOT_DIR/dist/build"
 cd "$ROOT_DIR/src"
-CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o "$ROOT_DIR/dist/build/${BINARY_NAME}-amd64" .
-CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o "$ROOT_DIR/dist/build/${BINARY_NAME}-arm64" .
+
+# Fyne's desktop driver depends on OpenGL bindings that require CGO on macOS.
+# Build each architecture with explicit clang arch flags, then merge via lipo.
+build_arch() {
+  local goarch="$1"
+  local clang_arch="$2"
+  local output="$ROOT_DIR/dist/build/${BINARY_NAME}-${goarch}"
+
+  echo "  - Building darwin/${goarch} (${clang_arch})..."
+  CGO_ENABLED=1 \
+  GOOS=darwin \
+  GOARCH="$goarch" \
+  CC=clang \
+  CXX=clang++ \
+  CGO_CFLAGS="-arch ${clang_arch}" \
+  CGO_CXXFLAGS="-arch ${clang_arch}" \
+  CGO_LDFLAGS="-arch ${clang_arch}" \
+  SDKROOT="$(xcrun --sdk macosx --show-sdk-path)" \
+  go build -o "$output" .
+}
+
+build_arch amd64 x86_64
+build_arch arm64 arm64
+
 lipo -create \
   -output "$ROOT_DIR/dist/root$INSTALL_DIR/$BINARY_NAME" \
   "$ROOT_DIR/dist/build/${BINARY_NAME}-amd64" \
