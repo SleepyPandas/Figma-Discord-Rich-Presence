@@ -22,6 +22,12 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version: '1.25.x'
+
+    - name: Generate Windows Icon Resource
+      run: |
+        go install github.com/akavel/rsrc@latest
+        $rsrc = Join-Path (go env GOPATH) "bin\rsrc.exe"
+        & $rsrc -ico assets/app-icon.ico -o src/rsrc.syso
         
     - name: Build Executable
       run: |
