@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"image/color"
+	"os"
+	"path/filepath"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -10,6 +12,12 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
+)
+
+const (
+	uiOuterPadding = 16
+	uiCardPadding  = 12
+	uiSectionGap   = 14
 )
 
 var (
@@ -67,6 +75,7 @@ func (s *statusIndicator) setDisconnected() {
 type AppUI struct {
 	App    fyne.App
 	Window fyne.Window
+	Icon   fyne.Resource
 	Events *UIEvents
 	Config *Config
 	Status *statusIndicator
@@ -77,6 +86,10 @@ type AppUI struct {
 func SetupUI(cfg *Config, events *UIEvents) *AppUI {
 	fyneApp := app.NewWithID("com.figma.discord-rpc")
 	fyneApp.Settings().SetTheme(newWebsiteDarkTheme())
+	icon := loadAppIconResource()
+	if icon != nil {
+		fyneApp.SetIcon(icon)
+	}
 
 	win := fyneApp.NewWindow(fmt.Sprintf("Figma Discord Rich Presence  v%s", appVersion))
 	win.Resize(fyne.NewSize(460, 500))
@@ -86,6 +99,7 @@ func SetupUI(cfg *Config, events *UIEvents) *AppUI {
 	ui := &AppUI{
 		App:    fyneApp,
 		Window: win,
+		Icon:   icon,
 		Events: events,
 		Config: cfg,
 		Status: newStatusIndicator(),
@@ -106,6 +120,39 @@ func SetupUI(cfg *Config, events *UIEvents) *AppUI {
 	ui.setupSystemTray()
 
 	return ui
+}
+
+func loadAppIconResource() fyne.Resource {
+	candidates := []string{
+		filepath.Join("assets", "app-icon.png"),
+		filepath.Join("assets", "icon.png"),
+		"icon.png",
+	}
+
+	if exePath, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exePath)
+		candidates = append(candidates,
+			filepath.Join(exeDir, "icon.png"),
+			filepath.Join(exeDir, "assets", "app-icon.png"),
+			filepath.Join(exeDir, "assets", "icon.png"),
+		)
+	}
+
+	seen := make(map[string]struct{})
+	for _, path := range candidates {
+		if _, exists := seen[path]; exists {
+			continue
+		}
+		seen[path] = struct{}{}
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		return fyne.NewStaticResource(filepath.Base(path), data)
+	}
+
+	return nil
 }
 
 func (ui *AppUI) handleDisconnectAction() {
@@ -161,7 +208,14 @@ func sectionCard(objects ...fyne.CanvasObject) fyne.CanvasObject {
 	background.CornerRadius = 14
 
 	content := container.NewVBox(objects...)
-	return container.NewStack(background, container.NewPadded(content))
+	padded := container.NewBorder(
+		spacer(uiCardPadding),
+		spacer(uiCardPadding),
+		horizontalSpacer(uiCardPadding),
+		horizontalSpacer(uiCardPadding),
+		content,
+	)
+	return container.NewStack(background, padded)
 }
 
 // buildContent creates the main settings panel layout.
@@ -231,20 +285,31 @@ func (ui *AppUI) buildContent() fyne.CanvasObject {
 
 	content := container.NewVBox(
 		statusCard,
-		spacer(12),
+		spacer(uiSectionGap),
 		privacyCard,
-		spacer(12),
+		spacer(uiSectionGap),
 		connectionCard,
 		spacer(8),
 		versionLabel,
 	)
 
-	return container.NewPadded(content)
+	return container.NewBorder(
+		spacer(uiOuterPadding),
+		spacer(uiOuterPadding),
+		horizontalSpacer(uiOuterPadding),
+		horizontalSpacer(uiOuterPadding),
+		content,
+	)
 }
 
 // setupSystemTray configures the system tray icon and menu.
 func (ui *AppUI) setupSystemTray() {
 	if deskApp, ok := ui.App.(desktop.App); ok {
+		if ui.Icon != nil {
+			deskApp.SetSystemTrayIcon(ui.Icon)
+		}
+		deskApp.SetSystemTrayWindow(ui.Window)
+
 		menu := fyne.NewMenu("FigmaRPC",
 			fyne.NewMenuItem("Show Settings", func() {
 				ui.Window.Show()
