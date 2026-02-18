@@ -111,6 +111,7 @@
                   Download for macOS
                 </a>
               </div>
+              <p class="version-meta">Latest release: <strong>v1.0.1</strong></p>
             </div>
           </div>
           <a
@@ -145,30 +146,51 @@
       </section>
 
       <section class="card reveal" data-reveal aria-labelledby="steps-title">
-        <h2 id="steps-title">Quick setup</h2>
-        <ol class="steps-list">
-          <li>
-            <span class="step-badge" aria-hidden="true">1</span>
-            <div>
-              <h3>Download installer</h3>
-              <p>Pick your operating system and run the downloaded file.</p>
-            </div>
-          </li>
-          <li>
-            <span class="step-badge" aria-hidden="true">2</span>
-            <div>
-              <h3>Allow OS prompt</h3>
-              <p>If your system warns about an unverified publisher, continue manually.</p>
-            </div>
-          </li>
-          <li>
-            <span class="step-badge" aria-hidden="true">3</span>
-            <div>
-              <h3>Open Figma and Discord</h3>
-              <p>Keep both apps running and your Rich Presence should update in seconds.</p>
-            </div>
-          </li>
-        </ol>
+        <div class="setup-layout">
+          <div class="setup-main">
+            <h2 id="steps-title">Quick setup</h2>
+            <ol class="steps-list">
+              <li>
+                <span class="step-badge" aria-hidden="true">1</span>
+                <div>
+                  <h3>Download installer</h3>
+                  <p>Pick your operating system and run the downloaded file.</p>
+                </div>
+              </li>
+              <li>
+                <span class="step-badge" aria-hidden="true">2</span>
+                <div>
+                  <h3>Allow OS prompt</h3>
+                  <p>If your system warns about an unverified publisher, continue manually.</p>
+                </div>
+              </li>
+              <li>
+                <span class="step-badge" aria-hidden="true">3</span>
+                <div>
+                  <h3>Open Figma and Discord</h3>
+                  <p>Keep both apps running and your Rich Presence should update in seconds.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
+          <aside class="accessibility-card" role="note" aria-labelledby="accessibility-title">
+            <h2 id="accessibility-title">macOS Accessibility required</h2>
+            <p class="accessibility-intro">To let Figma RPC read your current file title:</p>
+            <ol class="accessibility-steps">
+              <li>Open <strong>System Settings</strong>.</li>
+              <li>Go to <strong>Privacy &amp; Security -&gt; Accessibility</strong>.</li>
+              <li>Add <code>/usr/local/bin/figma-rpc</code> to the allowed apps list.</li>
+            </ol>
+            <a
+              class="inline-link"
+              href="https://github.com/SleepyPandas/Figma-Discord-Rich-Presence/blob/main/ReadME.md#macos"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Full setup notes
+            </a>
+          </aside>
+        </div>
       </section>
 
       <section class="note-strip reveal" data-reveal role="note" aria-label="Installer note">
