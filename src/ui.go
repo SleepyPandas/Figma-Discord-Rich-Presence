@@ -9,13 +9,14 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 )
 
 var (
-	colorConnected    = color.NRGBA{R: 76, G: 175, B: 80, A: 255}  // Green
-	colorDisconnected = color.NRGBA{R: 244, G: 67, B: 54, A: 255}  // Red
+	colorConnected    = color.NRGBA{R: 76, G: 175, B: 80, A: 255}
+	colorDisconnected = color.NRGBA{R: 244, G: 67, B: 54, A: 255}
+	colorCardFill     = color.NRGBA{R: 10, G: 10, B: 10, A: 209}
+	colorCardStroke   = color.NRGBA{R: 255, G: 255, B: 255, A: 36}
 )
 
 // UIEvents carries signals from the UI to the RPC loop.
@@ -78,7 +79,7 @@ func SetupUI(cfg *Config, events *UIEvents) *AppUI {
 	fyneApp.Settings().SetTheme(newWebsiteDarkTheme())
 
 	win := fyneApp.NewWindow(fmt.Sprintf("Figma Discord Rich Presence  v%s", appVersion))
-	win.Resize(fyne.NewSize(420, 380))
+	win.Resize(fyne.NewSize(460, 500))
 	win.SetFixedSize(true)
 	win.CenterOnScreen()
 
@@ -104,21 +105,53 @@ func SetupUI(cfg *Config, events *UIEvents) *AppUI {
 	return ui
 }
 
+func spacer(height float32) fyne.CanvasObject {
+	gap := canvas.NewRectangle(color.Transparent)
+	gap.SetMinSize(fyne.NewSize(0, height))
+	return gap
+}
+
+func horizontalSpacer(width float32) fyne.CanvasObject {
+	gap := canvas.NewRectangle(color.Transparent)
+	gap.SetMinSize(fyne.NewSize(width, 0))
+	return gap
+}
+
+func sectionHeader(title, subtitle string) fyne.CanvasObject {
+	titleLabel := widget.NewLabel(title)
+	titleLabel.TextStyle = fyne.TextStyle{Bold: true}
+
+	subtitleLabel := widget.NewLabel(subtitle)
+	subtitleLabel.Wrapping = fyne.TextWrapWord
+
+	return container.NewVBox(titleLabel, subtitleLabel)
+}
+
+func sectionCard(objects ...fyne.CanvasObject) fyne.CanvasObject {
+	background := canvas.NewRectangle(colorCardFill)
+	background.StrokeColor = colorCardStroke
+	background.StrokeWidth = 1
+	background.CornerRadius = 14
+
+	content := container.NewVBox(objects...)
+	return container.NewStack(background, container.NewPadded(content))
+}
+
 // buildContent creates the main settings panel layout.
 func (ui *AppUI) buildContent() fyne.CanvasObject {
-	// ── Status Section ──
-	statusCircle := container.New(layout.NewCenterLayout(), ui.Status.circle)
-	statusCircle.Resize(fyne.NewSize(12, 12))
-
+	// Status section
 	statusRow := container.NewHBox(
-		statusCircle,
+		ui.Status.circle,
+		horizontalSpacer(8),
 		ui.Status.label,
 	)
+	statusCard := sectionCard(
+		sectionHeader("Status", "Current Discord Rich Presence connection."),
+		spacer(8),
+		statusRow,
+	)
 
-	// ── Privacy Section ──
-	privacyHeader := widget.NewLabel("Privacy")
-	privacyHeader.TextStyle = fyne.TextStyle{Bold: true}
-
+	// Privacy section
 	privacyCheck := widget.NewCheck("Privacy Mode", func(checked bool) {
 		ui.Config.PrivacyMode = checked
 		if err := ui.Config.Save(); err != nil {
@@ -129,7 +162,7 @@ func (ui *AppUI) buildContent() fyne.CanvasObject {
 	privacyCheck.Checked = ui.Config.PrivacyMode
 
 	customLabelEntry := widget.NewEntry()
-	customLabelEntry.SetPlaceHolder("Working on a project")
+	customLabelEntry.SetPlaceHolder("xyz")
 	customLabelEntry.SetText(ui.Config.CustomLabel)
 	customLabelEntry.OnChanged = func(text string) {
 		ui.Config.CustomLabel = text
@@ -139,19 +172,19 @@ func (ui *AppUI) buildContent() fyne.CanvasObject {
 		ui.notifyConfigChanged()
 	}
 
-	customLabelForm := widget.NewFormItem("Custom Label", customLabelEntry)
-	privacyForm := widget.NewForm(customLabelForm)
+	customLabelLabel := widget.NewLabel("Replacement Label")
+	customLabelLabel.TextStyle = fyne.TextStyle{Bold: true}
 
-	privacySection := container.NewVBox(
-		privacyHeader,
+	privacyCard := sectionCard(
+		sectionHeader("Privacy", "Hide project names and replace them with your custom text."),
+		spacer(8),
 		privacyCheck,
-		privacyForm,
+		spacer(4),
+		customLabelLabel,
+		customLabelEntry,
 	)
 
-	// ── Connection Section ──
-	connectionHeader := widget.NewLabel("Connection")
-	connectionHeader.TextStyle = fyne.TextStyle{Bold: true}
-
+	// Connection section
 	disconnectBtn := widget.NewButton("Disconnect", func() {
 		ui.Config.RPCEnabled = false
 		if err := ui.Config.Save(); err != nil {
@@ -163,6 +196,7 @@ func (ui *AppUI) buildContent() fyne.CanvasObject {
 		default:
 		}
 	})
+	disconnectBtn.Importance = widget.DangerImportance
 
 	reconnectBtn := widget.NewButton("Reconnect", func() {
 		ui.Config.RPCEnabled = true
@@ -175,27 +209,26 @@ func (ui *AppUI) buildContent() fyne.CanvasObject {
 		default:
 		}
 	})
+	reconnectBtn.Importance = widget.HighImportance
 
-	buttonRow := container.NewGridWithColumns(2, disconnectBtn, reconnectBtn)
-
-	connectionSection := container.NewVBox(
-		connectionHeader,
-		buttonRow,
+	connectionCard := sectionCard(
+		sectionHeader("Connection", "Control Discord RPC without exiting the app."),
+		spacer(8),
+		container.NewGridWithColumns(2, disconnectBtn, reconnectBtn),
 	)
 
-	// ── Version Footer ──
+	// Version footer
 	versionLabel := widget.NewLabel(fmt.Sprintf("v%s", appVersion))
 	versionLabel.Alignment = fyne.TextAlignCenter
 	versionLabel.TextStyle = fyne.TextStyle{Italic: true}
 
-	// ── Assemble ──
 	content := container.NewVBox(
-		statusRow,
-		widget.NewSeparator(),
-		privacySection,
-		widget.NewSeparator(),
-		connectionSection,
-		widget.NewSeparator(),
+		statusCard,
+		spacer(12),
+		privacyCard,
+		spacer(12),
+		connectionCard,
+		spacer(8),
 		versionLabel,
 	)
 
