@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"image"
 	"image/color"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -12,12 +15,17 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
+
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 )
 
 const (
 	uiOuterPadding = 16
 	uiCardPadding  = 12
 	uiSectionGap   = 14
+	releasesURL    = "https://github.com/SleepyPandas/Figma-Discord-Rich-Presence/releases"
 )
 
 var (
@@ -126,6 +134,8 @@ func loadAppIconResource() fyne.Resource {
 	candidates := []string{
 		filepath.Join("assets", "app-icon.png"),
 		filepath.Join("assets", "icon.png"),
+		filepath.Join("..", "assets", "app-icon.png"),
+		filepath.Join("..", "assets", "icon.png"),
 		"icon.png",
 	}
 
@@ -149,6 +159,12 @@ func loadAppIconResource() fyne.Resource {
 		if err != nil {
 			continue
 		}
+
+		if _, _, decodeErr := image.DecodeConfig(bytes.NewReader(data)); decodeErr != nil {
+			fmt.Println("Skipping icon file with unsupported format:", path, decodeErr)
+			continue
+		}
+
 		return fyne.NewStaticResource(filepath.Base(path), data)
 	}
 
@@ -243,7 +259,7 @@ func (ui *AppUI) buildContent() fyne.CanvasObject {
 	privacyCheck.Checked = ui.Config.PrivacyMode
 
 	customLabelEntry := widget.NewEntry()
-	customLabelEntry.SetPlaceHolder("xyz")
+	customLabelEntry.SetPlaceHolder("Working on a project")
 	customLabelEntry.SetText(ui.Config.CustomLabel)
 	customLabelEntry.OnChanged = func(text string) {
 		ui.Config.CustomLabel = text
@@ -279,6 +295,18 @@ func (ui *AppUI) buildContent() fyne.CanvasObject {
 	)
 
 	// Version footer
+	updatesFallback := widget.NewLabel("Check for updates")
+	updatesFallback.Alignment = fyne.TextAlignCenter
+	var updatesLink fyne.CanvasObject = updatesFallback
+	if parsedReleasesURL, err := url.Parse(releasesURL); err == nil {
+		link := widget.NewHyperlink("Check for updates", parsedReleasesURL)
+		link.Alignment = fyne.TextAlignCenter
+		link.TextStyle = fyne.TextStyle{Bold: true}
+		updatesLink = link
+	} else {
+		fmt.Println("Error parsing releases URL:", err)
+	}
+
 	versionLabel := widget.NewLabel(fmt.Sprintf("v%s", appVersion))
 	versionLabel.Alignment = fyne.TextAlignCenter
 	versionLabel.TextStyle = fyne.TextStyle{Italic: true}
@@ -290,6 +318,8 @@ func (ui *AppUI) buildContent() fyne.CanvasObject {
 		spacer(uiSectionGap),
 		connectionCard,
 		spacer(8),
+		updatesLink,
+		spacer(4),
 		versionLabel,
 	)
 

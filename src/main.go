@@ -268,13 +268,24 @@ func ensureConnected(state *rpcManagerState, stop <-chan struct{}) bool {
 
 func activityFromFilename(filename string, privacyMode bool, customLabel string, start time.Time) client.Activity {
 	if privacyMode {
+		state := sanitizeCustomLabel(customLabel)
+		details := "Editing File"
+		smallImage := "edit"
+		smallText := "Editing"
+
+		if filename == "Browsing Files" {
+			details = "In Home"
+			smallImage = "folder"
+			smallText = "Browsing"
+		}
+
 		return client.Activity{
-			State:      customLabel,
-			Details:    "Privacy Mode",
+			State:      state,
+			Details:    details,
 			LargeImage: "largeimageid",
 			LargeText:  "Figma",
-			SmallImage: "privacy",
-			SmallText:  "Private",
+			SmallImage: smallImage,
+			SmallText:  smallText,
 			Timestamps: &client.Timestamps{
 				Start: &start,
 			},
