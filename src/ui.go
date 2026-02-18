@@ -90,6 +90,9 @@ func SetupUI(cfg *Config, events *UIEvents) *AppUI {
 		Config: cfg,
 		Status: newStatusIndicator(),
 	}
+	if !cfg.RPCEnabled {
+		ui.Status.setDisconnected()
+	}
 
 	// Build the window content
 	win.SetContent(ui.buildContent())
@@ -103,6 +106,30 @@ func SetupUI(cfg *Config, events *UIEvents) *AppUI {
 	ui.setupSystemTray()
 
 	return ui
+}
+
+func (ui *AppUI) handleDisconnectAction() {
+	ui.Config.RPCEnabled = false
+	if err := ui.Config.Save(); err != nil {
+		fmt.Println("Error saving config:", err)
+	}
+	ui.Status.setDisconnected()
+	select {
+	case ui.Events.Disconnect <- struct{}{}:
+	default:
+	}
+}
+
+func (ui *AppUI) handleReconnectAction() {
+	ui.Config.RPCEnabled = true
+	if err := ui.Config.Save(); err != nil {
+		fmt.Println("Error saving config:", err)
+	}
+	ui.Status.setConnected()
+	select {
+	case ui.Events.Reconnect <- struct{}{}:
+	default:
+	}
 }
 
 func spacer(height float32) fyne.CanvasObject {
@@ -185,30 +212,10 @@ func (ui *AppUI) buildContent() fyne.CanvasObject {
 	)
 
 	// Connection section
-	disconnectBtn := widget.NewButton("Disconnect", func() {
-		ui.Config.RPCEnabled = false
-		if err := ui.Config.Save(); err != nil {
-			fmt.Println("Error saving config:", err)
-		}
-		ui.Status.setDisconnected()
-		select {
-		case ui.Events.Disconnect <- struct{}{}:
-		default:
-		}
-	})
+	disconnectBtn := widget.NewButton("Disconnect", ui.handleDisconnectAction)
 	disconnectBtn.Importance = widget.DangerImportance
 
-	reconnectBtn := widget.NewButton("Reconnect", func() {
-		ui.Config.RPCEnabled = true
-		if err := ui.Config.Save(); err != nil {
-			fmt.Println("Error saving config:", err)
-		}
-		ui.Status.setConnected()
-		select {
-		case ui.Events.Reconnect <- struct{}{}:
-		default:
-		}
-	})
+	reconnectBtn := widget.NewButton("Reconnect", ui.handleReconnectAction)
 	reconnectBtn.Importance = widget.HighImportance
 
 	connectionCard := sectionCard(
@@ -244,28 +251,8 @@ func (ui *AppUI) setupSystemTray() {
 				ui.Window.RequestFocus()
 			}),
 			fyne.NewMenuItemSeparator(),
-			fyne.NewMenuItem("Disconnect from RPC", func() {
-				ui.Config.RPCEnabled = false
-				if err := ui.Config.Save(); err != nil {
-					fmt.Println("Error saving config:", err)
-				}
-				ui.Status.setDisconnected()
-				select {
-				case ui.Events.Disconnect <- struct{}{}:
-				default:
-				}
-			}),
-			fyne.NewMenuItem("Reconnect to RPC", func() {
-				ui.Config.RPCEnabled = true
-				if err := ui.Config.Save(); err != nil {
-					fmt.Println("Error saving config:", err)
-				}
-				ui.Status.setConnected()
-				select {
-				case ui.Events.Reconnect <- struct{}{}:
-				default:
-				}
-			}),
+			fyne.NewMenuItem("Disconnect from RPC", ui.handleDisconnectAction),
+			fyne.NewMenuItem("Reconnect to RPC", ui.handleReconnectAction),
 			fyne.NewMenuItemSeparator(),
 			fyne.NewMenuItem("Quit", func() {
 				ui.App.Quit()

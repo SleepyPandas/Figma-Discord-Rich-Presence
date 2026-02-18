@@ -4,59 +4,78 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/hugolgst/rich-go/client"
 )
 
-// Replace with your Own Public Key if you desire
-
+// Replace with your own public key if desired.
 const discordClientID = "1473014472498086092"
 const appVersion = "1.0.1"
+
+type rpcManagerState struct {
+	clientID     string
+	rpcEnabled   bool
+	connected    bool
+	sessionStart time.Time
+	lastFilename string
+}
 
 func main() {
 	fmt.Printf("Figma Discord Rich Presence v%s\n", appVersion)
 
-	clientID := discordClientID
-
-	// Retry connecting to Discord until it succeeds
-	var err error
-	for {
-		err = client.Login(clientID)
-		if err == nil {
-			break
-		}
-		fmt.Println("Waiting for Discord... retrying in 5s")
-		time.Sleep(5 * time.Second)
+	cfg, err := LoadConfig()
+	if err != nil {
+		fmt.Println("Warning: loading config had issues:", err)
 	}
 
-	// Handle graceful shutdown (Ctrl+C)
+	events := NewUIEvents()
+	ui := SetupUI(cfg, events)
+
+	stop := make(chan struct{})
+	filenameUpdates := make(chan string, 1)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go runFigmaPoller(filenameUpdates, stop, &wg)
+
+	wg.Add(1)
+	go runRPCManager(discordClientID, cfg, events, filenameUpdates, stop, &wg)
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigChan
-		fmt.Println("\nShutting down... logging out of Discord.")
-		client.Logout()
-		os.Exit(0)
+		fmt.Println("\nShutting down...")
+		ui.App.Quit()
 	}()
 
 	fmt.Println("Figma Discord Rich Presence is running...")
+	ui.Run()
 
-	// Start time for the session
-	now := time.Now()
+	close(stop)
+	wg.Wait()
+	fmt.Println("Exited cleanly.")
+}
 
-	// Track the last detected state to avoid redundant Discord updates
-	lastFilename := ""
+func runFigmaPoller(filenameUpdates chan string, stop <-chan struct{}, wg *sync.WaitGroup) {
+	defer wg.Done()
 
-	// Track whether we are currently connected to Discord
-	loggedIn := true
 	lastReadErr := ""
 	lastReadErrAt := time.Time{}
 	emptyPolls := 0
+	lastSent := ""
+	hasLastSent := false
 
 	for {
-		// Get the current file from Figma
+		select {
+		case <-stop:
+			return
+		default:
+		}
+
 		filename, err := GetFigmaTitle()
 		if err != nil {
 			errMsg := err.Error()
@@ -66,8 +85,9 @@ func main() {
 				lastReadErr = errMsg
 				lastReadErrAt = nowErr
 			}
-
-			time.Sleep(1 * time.Second)
+			if !sleepWithStop(1*time.Second, stop) {
+				return
+			}
 			continue
 		}
 		lastReadErr = ""
@@ -75,82 +95,200 @@ func main() {
 
 		if filename == "" {
 			emptyPolls++
-			if emptyPolls == 1 && lastFilename != "" {
+			if emptyPolls == 1 && hasLastSent && lastSent != "" {
 				fmt.Println("Figma title temporarily unavailable, waiting for confirmation...")
 			}
-
-			// Require several consecutive empty polls to avoid flapping on transient AppleScript misses.
 			if emptyPolls < 3 {
-				time.Sleep(1 * time.Second)
+				if !sleepWithStop(1*time.Second, stop) {
+					return
+				}
 				continue
 			}
-
-			// Figma was open before but is now closed clear the presence
-			if lastFilename != "" {
-				fmt.Println("Figma closed or no file open. Clearing presence.")
-				client.Logout()
-				loggedIn = false
-				lastFilename = ""
-			}
 		} else {
-			if emptyPolls > 0 && lastFilename != "" {
+			if emptyPolls > 0 && hasLastSent && lastSent != "" {
 				fmt.Println("Figma title recovered.")
 			}
 			emptyPolls = 0
-
-			// Figma is open reconnect to Discord if we logged out
-			if !loggedIn {
-				fmt.Println("Figma detected again, reconnecting to Discord...")
-				for {
-					err = client.Login(clientID)
-					if err == nil {
-						break
-					}
-					fmt.Println("Waiting for Discord... retrying in 5s")
-					time.Sleep(5 * time.Second)
-				}
-				loggedIn = true
-				now = time.Now() // reset session timer
-			}
-
-			if filename != lastFilename {
-				fmt.Println("State changed:", filename)
-
-				details := "Editing File"
-				state := filename
-				smallImage := "edit"
-				smallText := "Editing"
-
-				if filename == "Browsing Files" {
-					details = "In Home"
-					state = "Browsing Files"
-					smallImage = "folder"
-					smallText = "Browsing"
-				}
-
-				err = client.SetActivity(client.Activity{
-					State:      state,
-					Details:    details,
-					LargeImage: "largeimageid",
-					LargeText:  "Figma",
-					SmallImage: smallImage,
-					SmallText:  smallText,
-					Timestamps: &client.Timestamps{
-						Start: &now,
-					},
-				})
-
-				if err != nil {
-					fmt.Println("Failed to set activity:", err)
-				}
-			}
-
-			lastFilename = filename
 		}
 
-		// Poll every 1 seconds (the limit  for discord is generally 1 per 15 seconds or 10000)
-		// 10000 requests per 6 minutes
-		// however we only ping discord API when there is an actual change so 1 is fine
-		time.Sleep(1 * time.Second)
+		if !hasLastSent || filename != lastSent {
+			pushLatestFilename(filenameUpdates, filename)
+			lastSent = filename
+			hasLastSent = true
+		}
+
+		if !sleepWithStop(1*time.Second, stop) {
+			return
+		}
+	}
+}
+
+func runRPCManager(clientID string, cfg *Config, events *UIEvents, filenameUpdates <-chan string, stop <-chan struct{}, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	state := rpcManagerState{
+		clientID:     clientID,
+		rpcEnabled:   cfg.RPCEnabled,
+		connected:    false,
+		sessionStart: time.Now(),
+		lastFilename: "",
+	}
+
+	if !state.rpcEnabled {
+		fmt.Println("RPC is disabled in settings. Waiting for Reconnect.")
+	}
+
+	for {
+		select {
+		case <-stop:
+			if state.connected {
+				client.Logout()
+			}
+			return
+
+		case <-events.Disconnect:
+			state.rpcEnabled = false
+			state.lastFilename = ""
+			if state.connected {
+				fmt.Println("Disconnecting from Discord RPC.")
+				client.Logout()
+				state.connected = false
+			}
+
+		case <-events.Reconnect:
+			state.rpcEnabled = true
+			state.sessionStart = time.Now()
+			state.lastFilename = ""
+			ensureConnected(&state, stop)
+
+		case updated := <-events.ConfigChanged:
+			if updated == nil {
+				continue
+			}
+			if updated.RPCEnabled == state.rpcEnabled {
+				continue
+			}
+			if updated.RPCEnabled {
+				state.rpcEnabled = true
+				state.sessionStart = time.Now()
+				state.lastFilename = ""
+				ensureConnected(&state, stop)
+			} else {
+				state.rpcEnabled = false
+				state.lastFilename = ""
+				if state.connected {
+					fmt.Println("RPC disabled from settings.")
+					client.Logout()
+					state.connected = false
+				}
+			}
+
+		case filename := <-filenameUpdates:
+			handleFilenameUpdate(&state, filename, stop)
+		}
+	}
+}
+
+func handleFilenameUpdate(state *rpcManagerState, filename string, stop <-chan struct{}) {
+	if !state.rpcEnabled {
+		return
+	}
+
+	if filename == "" {
+		if state.lastFilename != "" {
+			fmt.Println("Figma closed or no file open. Clearing presence.")
+		}
+		if state.connected {
+			client.Logout()
+			state.connected = false
+		}
+		state.lastFilename = ""
+		return
+	}
+
+	if !ensureConnected(state, stop) {
+		return
+	}
+
+	if filename == state.lastFilename {
+		return
+	}
+
+	fmt.Println("State changed:", filename)
+	if err := client.SetActivity(activityFromFilename(filename, state.sessionStart)); err != nil {
+		fmt.Println("Failed to set activity:", err)
+		return
+	}
+
+	state.lastFilename = filename
+}
+
+func ensureConnected(state *rpcManagerState, stop <-chan struct{}) bool {
+	if !state.rpcEnabled {
+		return false
+	}
+	if state.connected {
+		return true
+	}
+
+	for {
+		err := client.Login(state.clientID)
+		if err == nil {
+			state.connected = true
+			return true
+		}
+		fmt.Println("Waiting for Discord... retrying in 5s")
+		select {
+		case <-stop:
+			return false
+		case <-time.After(5 * time.Second):
+		}
+	}
+}
+
+func activityFromFilename(filename string, start time.Time) client.Activity {
+	details := "Editing File"
+	state := filename
+	smallImage := "edit"
+	smallText := "Editing"
+
+	if filename == "Browsing Files" {
+		details = "In Home"
+		state = "Browsing Files"
+		smallImage = "folder"
+		smallText = "Browsing"
+	}
+
+	return client.Activity{
+		State:      state,
+		Details:    details,
+		LargeImage: "largeimageid",
+		LargeText:  "Figma",
+		SmallImage: smallImage,
+		SmallText:  smallText,
+		Timestamps: &client.Timestamps{
+			Start: &start,
+		},
+	}
+}
+
+func pushLatestFilename(ch chan string, value string) {
+	select {
+	case ch <- value:
+	default:
+		select {
+		case <-ch:
+		default:
+		}
+		ch <- value
+	}
+}
+
+func sleepWithStop(duration time.Duration, stop <-chan struct{}) bool {
+	select {
+	case <-stop:
+		return false
+	case <-time.After(duration):
+		return true
 	}
 }
