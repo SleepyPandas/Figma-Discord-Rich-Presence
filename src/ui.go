@@ -59,9 +59,7 @@ type statusIndicator struct {
 
 func newStatusIndicator() *statusIndicator {
 	circle := canvas.NewCircle(colorConnected)
-	circle.Resize(fyne.NewSize(12, 12))
-
-	label := widget.NewLabel("Connected to Discord")
+	label := widget.NewLabel("Connected")
 	label.TextStyle = fyne.TextStyle{Bold: true}
 
 	return &statusIndicator{circle: circle, label: label}
@@ -70,13 +68,13 @@ func newStatusIndicator() *statusIndicator {
 func (s *statusIndicator) setConnected() {
 	s.circle.FillColor = colorConnected
 	s.circle.Refresh()
-	s.label.SetText("Connected to Discord")
+	s.label.SetText("Connected")
 }
 
 func (s *statusIndicator) setDisconnected() {
 	s.circle.FillColor = colorDisconnected
 	s.circle.Refresh()
-	s.label.SetText("Disconnected from Discord")
+	s.label.SetText("Disconnected")
 }
 
 // AppUI holds all the Fyne app components.
@@ -234,14 +232,19 @@ func sectionCard(objects ...fyne.CanvasObject) fyne.CanvasObject {
 	return container.NewStack(background, padded)
 }
 
+func statusDot(dot *canvas.Circle, size float32) fyne.CanvasObject {
+	return container.NewGridWrap(fyne.NewSize(size, size), dot)
+}
+
 // buildContent creates the main settings panel layout.
 func (ui *AppUI) buildContent() fyne.CanvasObject {
 	// Status section
-	statusRow := container.NewHBox(
-		ui.Status.circle,
+	statusRowContent := container.NewHBox(
+		container.NewCenter(statusDot(ui.Status.circle, 14)),
 		horizontalSpacer(8),
 		ui.Status.label,
 	)
+	statusRow := container.NewCenter(statusRowContent)
 	statusCard := sectionCard(
 		sectionHeader("Status", "Current Discord Rich Presence connection."),
 		spacer(8),
@@ -286,7 +289,7 @@ func (ui *AppUI) buildContent() fyne.CanvasObject {
 	disconnectBtn.Importance = widget.DangerImportance
 
 	reconnectBtn := widget.NewButton("Reconnect", ui.handleReconnectAction)
-	reconnectBtn.Importance = widget.HighImportance
+	reconnectBtn.Importance = widget.SuccessImportance
 
 	connectionCard := sectionCard(
 		sectionHeader("Connection", "Control Discord RPC without exiting the app."),
