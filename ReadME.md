@@ -19,6 +19,9 @@ If you have suggestions, open an issue! :)
 - **Cross-platform**: Native support for **Windows** and **macOS**.
 - **Zero config**: Just run it (with Discord desktop running).
 
+<img width="400" height="812" alt="image" src="https://github.com/user-attachments/assets/8df09c20-56cb-4719-a40e-ac96bf169059" />
+
+
 ## Installation
 
 ### Website
