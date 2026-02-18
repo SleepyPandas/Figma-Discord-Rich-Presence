@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Figma Discord Rich Presence
-AppVersion=1.0.0
+AppVersion=1.0.1
 AppPublisher={#GetEnv('APP_PUBLISHER')}
 AppPublisherURL=https://github.com/SleepyPandas/Figma-Discord-Rich-Presence
 DefaultDirName={autopf}\Figma Discord RPC
@@ -27,7 +27,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 ; The main executable (built with -H windowsgui)
 Source: "..\figma-rpc.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; The .env config file
-Source: "..\src\.env"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\.env"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 
 [Icons]
 ; Start Menu shortcut
