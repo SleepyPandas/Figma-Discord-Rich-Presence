@@ -10,7 +10,6 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -76,7 +75,7 @@ type AppUI struct {
 // It returns an AppUI that the caller can use to run the app.
 func SetupUI(cfg *Config, events *UIEvents) *AppUI {
 	fyneApp := app.NewWithID("com.figma.discord-rpc")
-	fyneApp.Settings().SetTheme(theme.DarkTheme())
+	fyneApp.Settings().SetTheme(newWebsiteDarkTheme())
 
 	win := fyneApp.NewWindow(fmt.Sprintf("Figma Discord Rich Presence  v%s", appVersion))
 	win.Resize(fyne.NewSize(420, 380))
