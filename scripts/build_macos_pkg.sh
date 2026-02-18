@@ -8,7 +8,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_NAME="Figma Discord RPC"
 BINARY_NAME="figma-rpc"
 IDENTIFIER="com.figma.discord-rpc"
-VERSION="1.0.1"
+VERSION="2.0.0"
 INSTALL_DIR="/usr/local/bin"
 
 echo "Building macOS package for $APP_NAME..."

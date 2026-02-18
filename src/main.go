@@ -13,7 +13,7 @@ import (
 
 // Replace with your own public key if desired.
 const discordClientID = "1473014472498086092"
-const appVersion = "1.0.1"
+const appVersion = "2.0.0"
 
 type rpcManagerState struct {
 	clientID        string

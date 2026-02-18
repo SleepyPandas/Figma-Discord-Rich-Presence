@@ -17,5 +17,5 @@
         <pkg-ref id="com.figma.discord-rpc"/>
     </choice>
     
-    <pkg-ref id="com.figma.discord-rpc" version="1.0.1" onConclusion="none">component.pkg</pkg-ref>
+    <pkg-ref id="com.figma.discord-rpc" version="2.0.0" onConclusion="none">component.pkg</pkg-ref>
 </installer-gui-script>

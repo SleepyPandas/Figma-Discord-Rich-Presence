@@ -1,66 +1,66 @@
 # Figma Discord Rich Presence
 
-This is a simple tool written in Go to update your discord status. Figma Desktop has no built in tool or plugin to change your status. And the existing tools were not so plug and play so I thought I would make one. 
-Also it annoyed me that someone I know didn't have RPC on Figma but they use it everyday... 
+Current release target: **v2.0.0**
 
-If you have any suggestions make an issue! :) 
+This is a Go app that updates your Discord status while you work in Figma Desktop.
+Figma Desktop does not include built-in Discord Rich Presence support, so this project provides a plug-and-play option.
+
+If you have suggestions, open an issue! :)
 
 | Working in File  | Home  | Default Without Plugin |
 | :---: | :---: | :---: |
 | <img width="300" alt="Home" src="https://github.com/user-attachments/assets/1058ef1e-26b5-4176-8329-dfc1c5e2c22f" /> | <img width="300" alt="Working in File" src="https://github.com/user-attachments/assets/5c1c1402-303e-4180-8552-98bbdb45c8fe" /> | <img width="300" alt="Default" src="https://github.com/user-attachments/assets/2ace9e79-c094-483e-9cbd-55e765eea5e1" /> |
 
-
 ## Features
 
-- **Project & File Support**: Shows the specific project or file you are working on.
-- **Browsing State**: Detects when you are in the "Home" or "Working on a Project".
-- **Smart Reconnect**: Automatically reconnects to Discord if the connection is lost or if you restart Discord.
-- **Cross-Platform**: Native support for **Windows** and **macOS**.
-- **Zero Config**: Just run it, and it works (assuming you have the Discord desktop app running).
+- **Project and file support**: Shows the specific project or file you are working on.
+- **Browsing state**: Detects when you are in "Home" or working in a file.
+- **Smart reconnect**: Automatically reconnects to Discord if the connection is lost or Discord restarts.
+- **Cross-platform**: Native support for **Windows** and **macOS**.
+- **Zero config**: Just run it (with Discord desktop running).
 
-## Installation 
+## Installation
 
-### Website 
-1. Visit the website for installation files [Figma Discord Rich Presence](https://sleepypandas.github.io/Figma-Discord-Rich-Presence/)
+### Website
+1. Visit [Figma Discord Rich Presence](https://sleepypandas.github.io/Figma-Discord-Rich-Presence/).
 
 ### Windows
 1. Go to the [Releases](https://github.com/SleepyPandas/Figma-Discord-Rich-Presence/releases) page.
-2. Download the latest `FigmaRPC_Setup.exe`.
+2. Download `FigmaRPC-Windows-Installer.exe`.
 3. Run the installer.
-4. (Optional) Check "Run on Startup" during installation to have it alwys running.
+4. Optional: check "Run on Startup" during installation.
 
 ### macOS
 1. Go to the [Releases](https://github.com/SleepyPandas/Figma-Discord-Rich-Presence/releases) page.
-2. Download the latest `FigmaRPC_Installer.pkg`.
+2. Download `FigmaRPC-MacOs-Installer.pkg`.
 3. Run the installer (`Right Click -> Open` if you see a security warning).
-4. The app will install and start automatically.
-5. If not open the terminal and type `figma-rpc`
+4. The app installs and starts automatically.
+5. If it does not start, open Terminal and run `figma-rpc`.
 
 > [!IMPORTANT]
-> On macOS, you must grant Accessibility permission so the app can read Figma window titles.
-> Go to **System Settings → Privacy & Security → Accessibility** and add:
+> On macOS, grant Accessibility permission so the app can read Figma window titles.
+> Go to **System Settings -> Privacy & Security -> Accessibility** and add:
 > **`/usr/local/bin/figma-rpc`**
 
 > [!WARNING]
-> **Windows and macOS will warn that this installer/app is unsigned or from an unidentified publisher.**
-> This is expected for now because the app is not code-signed and it costs me 99+$ USD to sign it.
-
+> **Windows and macOS may warn that the installer/app is unsigned or from an unidentified publisher.**
+> This is expected because the app is currently unsigned.
 
 <img width="500" height="255" alt="image" src="https://github.com/user-attachments/assets/34a93241-1594-4e9d-90ed-b58fe48135a5" />
 
 ## Usage
 
-Once installed, the application runs in the background. 
+Once installed, the application runs in the background.
 - Open **Figma**.
 - Open **Discord**.
-- Your status should update within a few seconds!
+- Your status should update within a few seconds.
 
 ## Development
 
 If you want to build this yourself:
 
 ### Prerequisites
-- [Go 1.21+](https://go.dev/dl/)
+- [Go 1.25+](https://go.dev/dl/)
 - **Windows**: [Inno Setup 6](https://jrsoftware.org/isdl.php) (for building the installer)
 - **macOS**: Xcode Command Line Tools
 
@@ -85,7 +85,6 @@ cd src
 go build -o ../figma-rpc .
 ```
 
-
 ## License
 
-This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache 2.0 License. See [LICENSE](LICENSE).
