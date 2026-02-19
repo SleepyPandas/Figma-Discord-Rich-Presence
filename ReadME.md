@@ -18,6 +18,10 @@ If you have suggestions, open an issue! :)
 - **Smart reconnect**: Automatically reconnects to Discord if the connection is lost or Discord restarts.
 - **Cross-platform**: Native support for **Windows** and **macOS**.
 - **Zero config**: Just run it (with Discord desktop running).
+- **Simple Configuration UI**: set Privacy mode and enable / disable Figma-RPC
+
+<img width="400" height="812" alt="image" src="https://github.com/user-attachments/assets/8df09c20-56cb-4719-a40e-ac96bf169059" />
+
 
 ## Installation
 
@@ -54,6 +58,9 @@ Once installed, the application runs in the background.
 - Open **Figma**.
 - Open **Discord**.
 - Your status should update within a few seconds.
+- To Configure any settings open figma-RPC in your task tray 
+
+![alt text](image.png)
 
 ## Development
 
