@@ -50,8 +50,6 @@ If you have suggestions, open an issue! :)
 > **Windows and macOS may warn that the installer/app is unsigned or from an unidentified publisher.**
 > This is expected because the app is currently unsigned.
 
-<img width="500" height="255" alt="image" src="https://github.com/user-attachments/assets/34a93241-1594-4e9d-90ed-b58fe48135a5" />
-
 ## Usage
 
 Once installed, the application runs in the background.
